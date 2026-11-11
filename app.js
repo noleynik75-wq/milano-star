@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '202611111625'; // подставляется при публикации (tools/release-web.js)
+  var APP_VERSION = '202611111651'; // подставляется при публикации (tools/release-web.js)
   var CFG = window.MSH2_CONFIG || {};
   var LS = { session: 'msh2.session', lang: 'msh2.lang', products: 'msh2.products', cart: 'msh2.cart' };
 
@@ -267,8 +267,33 @@
     }, AUTO_REFRESH_MS);
   }
 
-  function setView(name) {
+  /**
+   * Навигация «Назад». Стек экранов внутри приложения + история браузера:
+   * системная кнопка «Назад» на телефоне закрывает открытое окно или возвращает
+   * на предыдущий экран, а не выкидывает из приложения.
+   */
+  var viewStack = [];
+  var PARENT_VIEW = { users: 'more', products: 'more', help: 'more', cashday: 'more' };
+
+  function goBack() {
+    var open = document.querySelectorAll('.modal-back');
+    if (open.length) { var top = open[open.length - 1]; if (top.parentNode) top.parentNode.removeChild(top); return true; }
+    if (state.screen !== 'app' || state.view === 'sell') return false;
+    var prev = viewStack.pop() || PARENT_VIEW[state.view] || 'sell';
+    setView(prev, { back: true });
+    return true;
+  }
+
+  function setView(name, opts) {
+    var isBack = opts && opts.back;
+    if (!isBack && state.view && state.view !== name && state.screen === 'app') {
+      viewStack.push(state.view);
+      if (viewStack.length > 20) viewStack.shift();
+      try { history.pushState({ msh2: name }, ''); } catch (e) { /* ignore */ }
+    }
+    if (name === 'sell') viewStack = [];
     state.view = name;
+    $('backBar').hidden = name === 'sell';
     startAutoRefresh(name);
     document.querySelectorAll('#screen-app .view').forEach(function (v) { v.hidden = v.id !== 'view-' + name; });
     var tabName = ['users', 'products', 'help', 'cashday'].indexOf(name) >= 0 ? 'more' : name;
@@ -744,7 +769,7 @@
       ['4. Thanh toán', 'Khách trả tiền mặt → bấm 💵 Tiền mặt. Khách chuyển khoản → bấm 📱 QR, nhưng CHỈ sau khi đã thấy tiền vào tài khoản. Kiểm tra số tiền → Xác nhận.'],
       ['5. Đã lưu chưa?', 'Hóa đơn chỉ được lưu khi thấy "✅ Đã lưu hóa đơn #…". Nếu hiện "Chưa rõ kết quả" (mất mạng) — KHÔNG bán lại, bấm "Kiểm tra lại". Hóa đơn sẽ không bị lưu hai lần.'],
       ['6. Xem hóa đơn', 'Tab 🧾 Hóa đơn: tổng tiền hôm nay, tiền mặt và QR riêng, danh sách hóa đơn.'],
-      ['7. Ghi sai hóa đơn', 'Trong 15 phút: tab 🧾 Hóa đơn → "Hủy hóa đơn" → ghi lý do. Quá 15 phút hoặc hóa đơn của người khác: báo chủ quán. Nếu đã trả tiền lại cho khách — chủ quán làm "Hoàn tiền".'],
+      ['7. Ghi sai hóa đơn', 'Trước khi kết thúc ca: tab 🧾 Hóa đơn → "Hủy hóa đơn" → ghi lý do. Sau khi kết thúc ca hoặc hóa đơn của người khác: báo chủ quán. Mọi lần hủy chủ quán đều thấy. Nếu đã trả tiền lại cho khách — chủ quán làm "Hoàn tiền".'],
       ['8. Bắt đầu và kết thúc ca', 'Đầu giờ: 🛒 Bán hàng → "▶ Bắt đầu ca". Người đầu tiên trong ngày đếm tiền trong két và nhập số tiền. Hết giờ: Thêm → "⏹ Kết thúc ca". Cuối ngày người phụ trách (mẹ / chủ quán): Thêm → "💰 Két tiền & đóng ngày" → đếm tiền → "Đóng sổ ngày".'],
       ['9. Lấy tiền từ két', 'Lấy tiền trong két để mua đồ cho quán (sữa, đá…) hoặc việc khác: Thêm → "💸 Lấy tiền từ két" → số tiền, mua gì, ghi chú. Bắt buộc ghi lại — nếu không cuối ngày tiền trong két sẽ không khớp.'],
       ['10. Mất điện thoại', 'Báo ngay cho chủ quán — chủ quán sẽ đăng xuất tài khoản của bạn trên mọi thiết bị.'],
@@ -757,7 +782,7 @@
       ['4. Оплата', 'Наличные → 💵 Наличные. Перевод → 📱 QR, но ТОЛЬКО после того, как деньги пришли на счёт (приложение банк не проверяет). Проверьте сумму → Подтвердить.'],
       ['5. Сохранилось ли?', 'Чек сохранён, только когда видно «✅ Чек сохранён №…». Если «Результат не известен» (пропала связь) — НЕ пробивайте заново, нажмите «Проверить». Дубля не будет.'],
       ['6. Чеки', 'Вкладка 🧾 Чеки: итог за сегодня, отдельно наличные и QR, список чеков.'],
-      ['7. Ошибочный чек', 'В течение 15 минут: вкладка 🧾 Чеки → «Отменить чек» → причина. Позже или чужой чек — через владельца. Если деньги гостю уже вернули — владелец оформляет «Возврат».'],
+      ['7. Ошибочный чек', 'До конца своей смены: вкладка 🧾 Чеки → «Отменить чек» → причина. После «Закончить смену» или чужой чек — через владельца. Все отмены видны владельцу. Если деньги гостю уже вернули — владелец оформляет «Возврат».'],
       ['8. Начало и конец смены', 'В начале: 🛒 Касса → «▶ Начать смену». Первый за день пересчитывает деньги в кассе и вводит сумму. В конце: Ещё → «⏹ Закончить смену». Вечером ответственный (мама / владелец): Ещё → «💰 Касса дня и закрытие» → пересчитать деньги → «Закрыть день».'],
       ['9. Взято из кассы', 'Если взяли деньги из ящика — на покупку для кофейни (молоко, лёд…) или по другой причине: Ещё → «💸 Взято из кассы» → сумма, что купили, комментарий. Обязательно — иначе вечером касса не сойдётся.'],
       ['10. Потерян телефон', 'Сразу сообщите владельцу — он завершит ваш вход на всех устройствах.'],
@@ -1349,6 +1374,7 @@
     }
 
     if (d.fundingAll && d.fundingAll.length) body.appendChild(fundingCard('💰 ' + t('fundingTitle') + ' · ' + t('fundingAll'), d.fundingAll));
+    if (d.control) body.appendChild(renderControl(d.control));
     var L = d.lifetime;
     var pb = el('div', { className: 'chart-card' }, [el('h3', { text: '🎯 ' + t('payback') })]);
     [[t('lifeRevenue'), L.revenue], [t('lifeSpend'), L.purchase + L.expense], [t('lifeResult'), L.result], [t('investments'), L.investment], [t('withdrawals'), L.withdrawal]]
@@ -1583,7 +1609,9 @@
     f.input.addEventListener('input', function () { var n = Number(f.input.value.replace(/[^\d]/g, '')); prev.textContent = f.input.value ? '= ' + money(n) : ''; });
     var h = modal({
       title: t('shiftStart'),
-      body: [el('p', { className: 'muted', text: t('openingHint') }), f.node, prev],
+      body: [el('p', { className: 'muted', text: t('openingHint') }),
+        state.shiftInfo && state.shiftInfo.prevClose ? el('div', { className: 'warn-box', text: t('prevCloseHint') + ' (' + shortDate(state.shiftInfo.prevClose.date) + '): ' + money(state.shiftInfo.prevClose.actual) }) : null,
+        f.node, prev],
       buttons: [
         { label: t('confirm'), kind: 'btn-primary', onClick: function () {
           if (f.input.value.trim() === '') return;
@@ -1671,6 +1699,7 @@
     if (s.status === 'none') { body.appendChild(el('p', { className: 'muted', text: t('dayNotOpened') })); return; }
     var calc = el('div', { className: 'card calc' }, [
       line(t('opening'), money(s.openingCash)),
+      s.openingDiff ? el('div', { className: 'ln' }, [el('span', { text: t('openingDiffL') + ' (' + money(s.prevCloseCash) + ')' }), el('b', { className: 'diff-bad', text: signed(s.openingDiff) })]) : null,
       line(t('cashSalesL'), money(s.cashSales)),
       s.cashRefunds ? line(t('cashRefundsL'), money(s.cashRefunds)) : null,
       s.movementsIn ? line(t('movInL'), money(s.movementsIn)) : null,
@@ -1752,15 +1781,29 @@
       diffBox.appendChild(el('b', { className: d === 0 ? 'diff-ok' : 'diff-bad', text: (d > 0 ? '+' : '') + money(d) + (d === 0 ? ' ✓' : '') }));
     };
     actual.input.addEventListener('input', upd);
+    // Сверка QR с банком: кассир вводит сумму поступлений из банковского приложения.
+    var qrBank = field(t('qrBankQ'), '', 'text');
+    qrBank.input.setAttribute('inputmode', 'numeric');
+    var qrDiffBox = el('div', { className: 'ln' });
+    qrBank.input.addEventListener('input', function () {
+      qrDiffBox.textContent = '';
+      if (qrBank.input.value.trim() === '') return;
+      var d = Number(qrBank.input.value.replace(/[^\d]/g, '')) - (s.qrSales - s.qrRefunds);
+      qrDiffBox.appendChild(el('span', { text: t('ctrlQr') + ': ' }));
+      qrDiffBox.appendChild(el('b', { className: d === 0 ? 'diff-ok' : 'diff-bad', text: signed(d) + (d === 0 ? ' ✓' : '') }));
+    });
     var h = modal({
       title: t('closeDay') + ' · ' + shortDate(s.date),
-      body: [el('p', { className: 'muted', text: t('expectedL') }), el('div', { className: 'big-amount', text: money(s.expected) }), actual.node, diffBox, note.node],
+      body: [el('p', { className: 'muted', text: t('expectedL') }), el('div', { className: 'big-amount', text: money(s.expected) }), actual.node, diffBox,
+        el('p', { className: 'muted', text: t('qrSystem') + ': ' + money(s.qrSales - s.qrRefunds) }), qrBank.node, qrDiffBox, el('p', { className: 'note-sm', text: t('qrBankHint') }), note.node],
       buttons: [
         { label: t('confirm'), kind: 'btn-primary', onClick: function () {
           if (actual.input.value.trim() === '') return;
           var n = Number(actual.input.value.replace(/[^\d]/g, ''));
           if (n !== s.expected && !note.input.value.trim()) { toast(errText('NOTE_REQUIRED')); return; }
-          return mutate('cashday.close', { date: s.date, expectedCash: s.expected, actualCash: n, note: note.input.value.trim() }).then(function () {
+          var qb = qrBank.input.value.trim() === '' ? undefined : Number(qrBank.input.value.replace(/[^d]/g, ''));
+          if (qb !== undefined && qb !== (s.qrSales - s.qrRefunds) && !note.input.value.trim()) { toast(errText('NOTE_REQUIRED')); return; }
+          return mutate('cashday.close', { date: s.date, expectedCash: s.expected, actualCash: n, qrBank: qb, note: note.input.value.trim() }).then(function () {
             h.close(); toast('🔒 ' + t('dayClosedInfo')); return loadShift().then(loadCashDay);
           }, function (e) {
             if (!isAuthErr(e)) toast(errText(e.code));
@@ -1850,6 +1893,62 @@
       bar.hidden = false;
       bar.onclick = function () { reloadApp(v.version); };
     }).catch(function () { /* нет связи — проверим позже */ });
+  }
+
+  // ---------- Контроль (для владельца) ----------
+  var CT = {
+    vi: {
+      ctrlTitle: '🛡 Kiểm soát', ctrlVoids: 'Hủy hóa đơn theo nhân viên', ctrlVoidList: 'Hóa đơn bị hủy', ctrlMin: 'phút sau khi bán',
+      ctrlDays: 'Ngày có chênh lệch', ctrlOpening: 'Đầu ngày', ctrlPrevClose: 'tối hôm trước', ctrlCash: 'Tiền mặt', ctrlQr: 'QR so với ngân hàng',
+      ctrlQrNotChecked: 'QR chưa đối chiếu ngân hàng', ctrlTaken: 'Lấy từ két theo người', ctrlAllGood: 'Không có gì bất thường trong thời gian này.',
+      qrBankQ: 'QR theo ngân hàng hôm nay (VND) — xem trong app ngân hàng', qrBankHint: 'Nếu bỏ trống — QR không được đối chiếu.',
+      qrSystem: 'QR theo hệ thống', prevCloseHint: 'Tối hôm trước khi đóng sổ trong két có', openingDiffL: 'Chênh lệch so với tối hôm trước'
+    },
+    ru: {
+      ctrlTitle: '🛡 Контроль', ctrlVoids: 'Отмены чеков по сотрудникам', ctrlVoidList: 'Отменённые чеки', ctrlMin: 'мин после продажи',
+      ctrlDays: 'Дни с расхождениями', ctrlOpening: 'Утром', ctrlPrevClose: 'вчера вечером', ctrlCash: 'Наличные', ctrlQr: 'QR против банка',
+      ctrlQrNotChecked: 'QR не сверен с банком', ctrlTaken: '«Взято из кассы» по людям', ctrlAllGood: 'За этот период ничего подозрительного.',
+      qrBankQ: 'QR по банку за сегодня (VND) — посмотрите в банковском приложении', qrBankHint: 'Если оставить пустым — QR не будет сверен.',
+      qrSystem: 'QR по кассе', prevCloseHint: 'Вчера при закрытии в кассе было', openingDiffL: 'Расхождение с вчерашним закрытием'
+    }
+  };
+  Object.keys(CT).forEach(function (l) { Object.keys(CT[l]).forEach(function (k) { I18N[l][k] = CT[l][k]; }); });
+
+  function signed(n) { return (n > 0 ? '+' : '') + money(n); }
+
+  function renderControl(c) {
+    var card = el('div', { className: 'chart-card' }, [el('h3', { text: t('ctrlTitle') })]);
+    var nothing = !c.voidsByCashier.length && !c.days.length && !c.cashTaken.length;
+    if (nothing) { card.appendChild(el('p', { className: 'note-sm', text: '✅ ' + t('ctrlAllGood') })); return card; }
+    if (c.voidsByCashier.length) {
+      card.appendChild(el('div', { className: 'k', text: t('ctrlVoids') }));
+      c.voidsByCashier.forEach(function (v) {
+        card.appendChild(el('div', { className: 'hbar' }, [el('div', { className: 'lbl' }, [el('span', { text: v.cashier + ' · ' + v.count }), el('b', { text: money(v.total) })])]));
+      });
+      card.appendChild(el('div', { className: 'k', text: t('ctrlVoidList') }));
+      c.voids.slice(0, 10).forEach(function (v) {
+        card.appendChild(el('div', { className: 'items-mini', text: '#' + v.no + ' ' + shortDate(v.date) + ' ' + timeOf(v.at) + ' · ' + v.cashier + ' · ' + money(v.total) + ' ' + t(v.method) +
+          ' · ' + v.minutesAfter + ' ' + t('ctrlMin') + (v.reason ? ' · «' + v.reason + '»' : '') }));
+      });
+    }
+    if (c.days.length) {
+      card.appendChild(el('div', { className: 'k', text: t('ctrlDays') }));
+      c.days.forEach(function (d) {
+        var parts = [];
+        if (d.openingDiff) parts.push(t('ctrlOpening') + ' ' + money(d.opening) + ' / ' + t('ctrlPrevClose') + ' ' + money(d.prevCloseCash) + ' → ' + signed(d.openingDiff));
+        if (d.cashDiff) parts.push(t('ctrlCash') + ' ' + signed(d.cashDiff));
+        if (d.qrDiff) parts.push(t('ctrlQr') + ' ' + signed(d.qrDiff));
+        if (!d.qrChecked && d.closedBy) parts.push(t('ctrlQrNotChecked'));
+        card.appendChild(el('div', { className: 'items-mini', text: '⚠️ ' + shortDate(d.date) + ': ' + parts.join(' · ') + (d.note ? ' · «' + d.note + '»' : '') }));
+      });
+    }
+    if (c.cashTaken.length) {
+      card.appendChild(el('div', { className: 'k', text: t('ctrlTaken') }));
+      c.cashTaken.forEach(function (x) {
+        card.appendChild(el('div', { className: 'hbar' }, [el('div', { className: 'lbl' }, [el('span', { text: x.who }), el('b', { text: money(x.total) })])]));
+      });
+    }
+    return card;
   }
 
   // ---------- Чеки ----------
@@ -2107,7 +2206,16 @@
       if (state.user && state.user.status !== 'blocked') mutate('me.setLanguage', { language: state.lang }).catch(function () {});
     });
     document.querySelectorAll('.js-logout').forEach(function (b) { b.addEventListener('click', function () { busy(b, logout); }); });
-    document.querySelectorAll('.js-back-more').forEach(function (b) { b.addEventListener('click', function () { setView('more'); }); });
+    // Старые кнопки «Назад» внутри экранов заменены общей полосой вверху.
+    document.querySelectorAll('.js-back-more').forEach(function (b) { b.hidden = true; });
+    $('backBar').addEventListener('click', function () { goBack(); });
+    // Системная «Назад» телефона: сначала закрыть окно / вернуться на экран назад.
+    try { history.replaceState({ msh2: 'root' }, ''); history.pushState({ msh2: 'guard' }, ''); } catch (e) { /* ignore */ }
+    window.addEventListener('popstate', function () {
+      if (goBack()) {
+        try { history.pushState({ msh2: 'guard' }, ''); } catch (e) { /* ignore */ }
+      }
+    });
     document.querySelectorAll('.tab').forEach(function (b) {
       b.addEventListener('click', function () { setView(b.getAttribute('data-view')); });
     });
