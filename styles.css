@@ -196,6 +196,8 @@ body.in-app main { padding-bottom: 260px; }
 }
 .tile:active { transform: scale(.98); }
 .tile .price { color: var(--accent); font-weight: 800; font-size: 18px; }
+.tile .ico { font-size: 34px; line-height: 1; }
+.tile .nm { flex: 1; }
 .tile .qty-badge {
   position: absolute; top: 8px; right: 8px; min-width: 28px; height: 28px; border-radius: 14px;
   background: var(--brand); color: var(--brand-text); font-size: 15px;
@@ -226,8 +228,8 @@ body.in-app main { padding-bottom: 260px; }
   background: var(--bg); color: var(--text); font-size: 17px;
 }
 .cart-summary strong { font-size: 22px; }
-.cart-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-.cart-actions .btn { min-height: 54px; padding: 8px; font-size: 17px; }
+.cart-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cart-actions .btn { min-height: 58px; padding: 8px; font-size: 19px; }
 .cart-actions .wide { grid-column: 1 / -1; }
 .cart-actions .btn[hidden] { display: none; }
 

@@ -24,14 +24,12 @@
       openInChrome: 'Mở bằng Chrome', copyLink: 'Sao chép liên kết', linkCopied: 'Đã sao chép. Dán vào Chrome hoặc Safari.',
       tabSell: 'Bán hàng', tabTables: 'Bàn', tabReceipts: 'Hóa đơn', tabMore: 'Thêm',
       all: 'Tất cả', noProducts: 'Chưa có sản phẩm.', items: 'món', clear: 'Xóa giỏ', cancel: 'Hủy', ok: 'OK',
-      payCash: 'Tiền mặt', payQr: 'QR', toTable: 'Ghi bàn', cash: 'Tiền mặt', qr: 'QR',
+      payCash: '💵 Tiền mặt', payQr: '📱 QR', cash: 'Tiền mặt', qr: 'QR',
       confirmPay: 'Xác nhận thanh toán', confirm: 'Xác nhận', saving: 'Đang lưu…',
       saleSaved: 'Đã lưu hóa đơn', receiptNo: 'Hóa đơn #',
       unknownTitle: 'Chưa rõ kết quả', unknownText: 'Mất kết nối khi đang lưu. Hóa đơn có thể đã được lưu. Bấm "Kiểm tra lại" — sẽ không bị lưu hai lần.',
       checkResult: 'Kiểm tra lại', chooseVariant: 'Chọn loại', clearCart: 'Xóa toàn bộ giỏ hàng?',
-      tableLabel: 'Tên bàn (ví dụ: Bàn 3)', newTable: 'Ghi vào bàn', tablesTitle: 'Bàn đang mở', noOrders: 'Không có bàn nào đang mở.',
-      addItems: 'Thêm món', addToOrder: 'Thêm vào', addingFor: 'Thêm món cho', cancelOrder: 'Hủy bàn', cancelReason: 'Lý do hủy bàn',
-      removeItemQ: 'Bỏ món này khỏi bàn?', orderSaved: 'Đã ghi vào bàn', opened: 'Mở lúc', by: 'bởi',
+      helpTitle: '📖 Hướng dẫn', ownerTitle: '📊 Dành cho chủ quán', soon: 'Sắp có', available: 'Đã có', open: 'Mở',
       receiptsTitle: 'Hóa đơn', today: 'Hôm nay', yesterday: 'Hôm qua', total: 'Tổng', count: 'Số hóa đơn',
       scopeOwn: 'Chỉ hóa đơn của bạn', scopeAll: 'Tất cả nhân viên', noSales: 'Chưa có hóa đơn.', table: 'Bàn',
       productsTitle: 'Sản phẩm & giá', addProduct: '+ Thêm', productsHint: 'Giá mới chỉ áp dụng cho hóa đơn mới. Hóa đơn cũ giữ giá cũ.',
@@ -69,14 +67,12 @@
       openInChrome: 'Открыть в Chrome', copyLink: 'Скопировать ссылку', linkCopied: 'Ссылка скопирована. Вставьте её в Chrome или Safari.',
       tabSell: 'Касса', tabTables: 'Столики', tabReceipts: 'Чеки', tabMore: 'Ещё',
       all: 'Все', noProducts: 'Товаров нет.', items: 'поз.', clear: 'Очистить', cancel: 'Отмена', ok: 'OK',
-      payCash: 'Наличные', payQr: 'QR', toTable: 'На столик', cash: 'Наличные', qr: 'QR',
+      payCash: '💵 Наличные', payQr: '📱 QR', cash: 'Наличные', qr: 'QR',
       confirmPay: 'Подтвердите оплату', confirm: 'Подтвердить', saving: 'Сохранение…',
       saleSaved: 'Чек сохранён', receiptNo: 'Чек №',
       unknownTitle: 'Результат не известен', unknownText: 'Связь прервалась во время сохранения. Чек мог сохраниться. Нажмите «Проверить» — дубля не будет.',
       checkResult: 'Проверить', chooseVariant: 'Выберите вариант', clearCart: 'Очистить корзину?',
-      tableLabel: 'Название столика (например: Стол 3)', newTable: 'Записать на столик', tablesTitle: 'Открытые столики', noOrders: 'Открытых столиков нет.',
-      addItems: 'Дозаказ', addToOrder: 'Добавить на', addingFor: 'Дозаказ для', cancelOrder: 'Отменить столик', cancelReason: 'Причина отмены',
-      removeItemQ: 'Убрать эту позицию со столика?', orderSaved: 'Записано на столик', opened: 'Открыт в', by: '—',
+      helpTitle: '📖 Инструкция', ownerTitle: '📊 Раздел владельца', soon: 'Скоро', available: 'Уже есть', open: 'Открыть',
       receiptsTitle: 'Чеки', today: 'Сегодня', yesterday: 'Вчера', total: 'Итого', count: 'Чеков',
       scopeOwn: 'Только ваши чеки', scopeAll: 'Все сотрудники', noSales: 'Чеков пока нет.', table: 'Стол',
       productsTitle: 'Товары и цены', addProduct: '+ Добавить', productsHint: 'Новая цена действует только для новых чеков. Старые чеки сохраняют прежнюю цену.',
@@ -111,9 +107,6 @@
     category: '',
     cart: readJson(LS.cart) || [],
     cartOpen: false,
-    addMode: null,           // { orderId, tableLabel } — дозаказ на столик
-    orders: [],
-    openOrderId: null,
     salesDay: 'today',
     salesData: null,
     usersData: null,
@@ -122,7 +115,6 @@
   var pendingRequestIds = {};
   var gsiReady = false;
   var pollTimer = null;
-  var ordersTimer = null;
 
   function $(id) { return document.getElementById(id); }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -259,15 +251,11 @@
   function setView(name) {
     state.view = name;
     document.querySelectorAll('#screen-app .view').forEach(function (v) { v.hidden = v.id !== 'view-' + name; });
-    var tabName = name === 'users' || name === 'products' ? 'more' : name;
+    var tabName = ['users', 'products', 'help', 'owner'].indexOf(name) >= 0 ? 'more' : name;
     document.querySelectorAll('.tab').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-view') === tabName); });
-    clearInterval(ordersTimer);
-    ordersTimer = null;
-    if (name === 'tables') {
-      loadOrders().catch(function () {});
-      ordersTimer = setInterval(function () { if (!document.hidden) loadOrders().catch(function () {}); }, 20000);
-    }
     if (name === 'receipts') loadSales().catch(function () {});
+    if (name === 'help') renderHelp();
+    if (name === 'owner') renderOwner();
     if (name === 'sell') renderSell();
     renderCart();
     window.scrollTo(0, 0);
@@ -283,7 +271,8 @@
     if (state.screen === 'app') {
       renderSell();
       renderCart();
-      if (state.view === 'tables') renderOrders();
+      if (state.view === 'help') renderHelp();
+      if (state.view === 'owner') renderOwner();
       if (state.view === 'receipts' && state.salesData) renderSales();
       if (state.view === 'users' && state.usersData) renderUsers();
       if (state.view === 'products' && state.adminProducts) renderAdminProducts();
@@ -304,6 +293,7 @@
     $('whoTop').textContent = u.status === 'active' ? (u.name || '') : '';
     $('usersBtn').hidden = !isAdmin();
     $('productsBtn').hidden = !isAdmin();
+    $('ownerBtn').hidden = !isAdmin();
     $('pendingWho').textContent = u.email;
   }
 
@@ -317,7 +307,6 @@
         show('app');
         setView(state.view || 'sell');
         loadProducts().catch(function () {});
-        loadOrders().catch(function () {});
       }
       return;
     }
@@ -382,7 +371,6 @@
     state.usersData = null;
     state.salesData = null;
     state.adminProducts = null;
-    state.addMode = null;
     lsDel(LS.session);
   }
 
@@ -531,16 +519,33 @@
     state.cart.forEach(function (l) { inCart[l.productId] = (inCart[l.productId] || 0) + l.qty; });
     list.forEach(function (p) {
       var tile = el('button', { className: 'tile', type: 'button' }, [
-        el('span', { text: productName(p) }),
+        el('span', { className: 'ico', text: productIcon(p), 'aria-hidden': 'true' }),
+        el('span', { className: 'nm', text: productName(p) }),
         el('span', { className: 'price', text: money(p.price) })
       ]);
       if (inCart[p.productId]) tile.appendChild(el('span', { className: 'qty-badge', text: String(inCart[p.productId]) }));
       tile.addEventListener('click', function () { onProductTap(p); });
       grid.appendChild(tile);
     });
-    // Режим дозаказа
-    $('addModeBar').hidden = !state.addMode;
-    if (state.addMode) $('addModeText').textContent = t('addingFor') + ' ' + state.addMode.tableLabel;
+  }
+
+  /**
+   * Значок товара по названию, затем по категории. Это не фото конкретного
+   * бренда, а общий символ — так быстрее узнать позицию глазами.
+   */
+  var ICONS = [
+    [/cacao/i, '🍫'], [/matcha/i, '🍵'], [/sâm dứa/i, '🧋'], [/ổi/i, '🍐'], [/chanh dây/i, '🍹'],
+    [/chanh/i, '🍋'], [/cà chua/i, '🍅'], [/cà rốt/i, '🥕'], [/(^|\s)cam(\s|$)/i, '🍊'], [/gừng|lipton|trà/i, '🫖'],
+    [/yaourt dâu/i, '🍓'], [/yaourt/i, '🥛'], [/nha đam/i, '🌿'], [/bò húc|sting|number one/i, '⚡'],
+    [/yến/i, '🥫'], [/bí đao/i, '🍈'], [/bạc xỉu|sữa tươi/i, '🥛'], [/cà phê|phin/i, '☕']
+  ];
+  var CATEGORY_ICONS = [[/thuốc/i, '🚬'], [/giải khát/i, '🥤'], [/nước ép/i, '🧃'], [/cà phê|phin/i, '☕']];
+  function productIcon(p) {
+    var name = p.nameVi || '';
+    for (var i = 0; i < ICONS.length; i++) if (ICONS[i][0].test(name)) return ICONS[i][1];
+    if (/thuốc/i.test(p.category)) return '🚬';
+    for (var j = 0; j < CATEGORY_ICONS.length; j++) if (CATEGORY_ICONS[j][0].test(p.category || '')) return CATEGORY_ICONS[j][1];
+    return '🍽️';
   }
 
   function onProductTap(p) {
@@ -605,12 +610,6 @@
         ]));
       });
     }
-    var add = !!state.addMode;
-    $('payCashBtn').hidden = add;
-    $('payQrBtn').hidden = add;
-    $('toTableBtn').hidden = add;
-    $('addToOrderBtn').hidden = !add;
-    if (add) $('addToOrderBtn').textContent = t('addToOrder') + ' ' + state.addMode.tableLabel;
   }
 
   function changeQty(idx, d) {
@@ -702,158 +701,62 @@
     if (state.salesData) state.salesData = null;
   }
 
-  // ---------- Столики ----------
-  function toTableFlow() {
-    if (!state.cart.length) return;
-    promptBox(t('newTable'), t('tableLabel')).then(function (label) {
-      if (!label) return;
-      var payload = { tableLabel: label, items: cartItemsPayload() };
-      return mutate('orders.create', payload).then(function () {
-        clearCart();
-        toast(t('orderSaved') + ': ' + label);
-        loadOrders().catch(function () {});
-      }).catch(function (e) {
-        if (isAuthErr(e)) return;
-        if (e.code === 'TABLE_BUSY') {
-          var existing = state.orders.find(function (o) { return o.tableLabel.toLowerCase() === label.toLowerCase(); });
-          toast(errText(e.code));
-          if (existing) { state.addMode = { orderId: existing.orderId, tableLabel: existing.tableLabel }; renderSell(); renderCart(); }
-          else loadOrders().catch(function () {});
-          return;
-        }
-        handleCatalogError(e).catch(function (err) { if (err.code !== 'PRICE_CHANGED' && err.code !== 'PRODUCT_UNAVAILABLE') toast(errText(err.code)); });
-      });
+  // ---------- Инструкция ----------
+  var HELP = {
+    vi: [
+      ['1. Mở ứng dụng', 'Mở trang bằng Chrome (Android) hoặc Safari (iPhone), KHÔNG mở trong Zalo/Messenger. Lần đầu: thêm vào màn hình chính (Chrome: ⋮ → "Thêm vào màn hình chính"; iPhone: Chia sẻ → "Thêm vào MH chính").'],
+      ['2. Đăng nhập', 'Bấm "Đăng nhập bằng Google" và chọn tài khoản của bạn. Lần đầu tiên phải chờ chủ quán duyệt. Sau đó không cần duyệt lại.'],
+      ['3. Bán hàng', 'Tab 🛒 Bán hàng → chọn nhóm → bấm vào món (bấm 2 lần = 2 ly). Bấm vào giỏ hàng ở dưới để sửa số lượng (− / +).'],
+      ['4. Thanh toán', 'Khách trả tiền mặt → bấm 💵 Tiền mặt. Khách chuyển khoản → bấm 📱 QR, nhưng CHỈ sau khi đã thấy tiền vào tài khoản. Kiểm tra số tiền → Xác nhận.'],
+      ['5. Đã lưu chưa?', 'Hóa đơn chỉ được lưu khi thấy "✅ Đã lưu hóa đơn #…". Nếu hiện "Chưa rõ kết quả" (mất mạng) — KHÔNG bán lại, bấm "Kiểm tra lại". Hóa đơn sẽ không bị lưu hai lần.'],
+      ['6. Xem hóa đơn', 'Tab 🧾 Hóa đơn: tổng tiền hôm nay, tiền mặt và QR riêng, danh sách hóa đơn.'],
+      ['7. Ghi sai hóa đơn', 'Hiện chưa hủy được trong ứng dụng. Báo ngay cho chủ quán số hóa đơn (#) và lý do. Chức năng hủy sẽ có trong bản sau.'],
+      ['8. Hết giờ làm', 'Hiện chưa có mở/đóng ca trong ứng dụng — sẽ có trong bản sau. Khi đổi người, bấm Thêm → Đăng xuất nếu dùng chung điện thoại.'],
+      ['9. Mất điện thoại', 'Báo ngay cho chủ quán — chủ quán sẽ đăng xuất tài khoản của bạn trên mọi thiết bị.']
+    ],
+    ru: [
+      ['1. Открыть приложение', 'Открывайте сайт в Chrome (Android) или Safari (iPhone), НЕ внутри Zalo/Messenger. В первый раз добавьте ярлык на главный экран (Chrome: ⋮ → «Добавить на главный экран»; iPhone: «Поделиться» → «На экран „Домой“»).'],
+      ['2. Вход', 'Нажмите «Войти через Google» и выберите свой аккаунт. В первый раз нужно дождаться одобрения владельца, дальше повторно одобрять не нужно.'],
+      ['3. Продажа', 'Вкладка 🛒 Касса → категория → нажмите на товар (два нажатия = две порции). Нажмите на корзину внизу, чтобы изменить количество (− / +).'],
+      ['4. Оплата', 'Наличные → 💵 Наличные. Перевод → 📱 QR, но ТОЛЬКО после того, как деньги пришли на счёт (приложение банк не проверяет). Проверьте сумму → Подтвердить.'],
+      ['5. Сохранилось ли?', 'Чек сохранён, только когда видно «✅ Чек сохранён №…». Если «Результат не известен» (пропала связь) — НЕ пробивайте заново, нажмите «Проверить». Дубля не будет.'],
+      ['6. Чеки', 'Вкладка 🧾 Чеки: итог за сегодня, отдельно наличные и QR, список чеков.'],
+      ['7. Ошибочный чек', 'Пока отменить в приложении нельзя. Сразу сообщите владельцу номер чека (#) и причину. Отмена появится в следующей версии.'],
+      ['8. Конец смены', 'Открытия и закрытия смены пока нет — появится в следующей версии. Если телефон общий, при смене человека: Ещё → Выйти.'],
+      ['9. Потерян телефон', 'Сразу сообщите владельцу — он завершит ваш вход на всех устройствах.']
+    ]
+  };
+
+  function renderHelp() {
+    var body = $('helpBody');
+    body.textContent = '';
+    HELP[state.lang].forEach(function (s) {
+      body.appendChild(el('div', { className: 'card' }, [el('div', { className: 'name', text: s[0] }), el('div', { text: s[1] })]));
     });
   }
 
-  function addToOrderFlow(btn) {
-    if (!state.addMode || !state.cart.length) return;
-    var mode = state.addMode;
-    busy(btn, function () {
-      return mutate('orders.addItems', { orderId: mode.orderId, items: cartItemsPayload() }).then(function () {
-        clearCart();
-        state.addMode = null;
-        toast(t('orderSaved') + ': ' + mode.tableLabel);
-        state.openOrderId = mode.orderId;
-        setView('tables');
-      }).catch(function (e) {
-        if (e.code === 'ORDER_CLOSED') { state.addMode = null; renderSell(); renderCart(); }
-        return handleCatalogError(e);
-      });
-    });
-  }
-
-  function loadOrders() {
-    return api('orders.list').then(function (res) {
-      state.orders = res.orders;
-      var badge = $('tablesBadge');
-      badge.hidden = res.orders.length === 0;
-      badge.textContent = String(res.orders.length);
-      if (state.openOrderId && !res.orders.some(function (o) { return o.orderId === state.openOrderId; })) state.openOrderId = null;
-      if (state.view === 'tables') renderOrders();
-    });
-  }
-
-  function renderOrders() {
-    var list = $('ordersList');
-    var detail = $('orderDetail');
-    list.textContent = '';
-    detail.textContent = '';
-    var open = state.openOrderId && state.orders.find(function (o) { return o.orderId === state.openOrderId; });
-    list.hidden = !!open;
-    detail.hidden = !open;
-    if (open) return renderOrderDetail(open);
-    if (!state.orders.length) { list.appendChild(el('p', { className: 'muted', text: t('noOrders') })); return; }
-    state.orders.forEach(function (o) {
-      var count = o.items.reduce(function (s, i) { return s + i.qty; }, 0);
-      var card = el('button', { className: 'card', type: 'button', style: 'text-align:left' }, [
-        el('div', { className: 'rc-head' }, [el('span', { className: 'name', text: '🪑 ' + o.tableLabel }), el('span', { className: 'amt', text: money(o.total) })]),
-        el('div', { className: 'meta', text: count + ' ' + t('items') + ' · ' + t('opened') + ' ' + timeOf(o.openedAt) + (o.openedBy ? ' · ' + o.openedBy : '') })
+  // ---------- Раздел владельца ----------
+  /** Что уже есть и что появится (этапы ТЗ). Кнопки ведут в готовые разделы. */
+  function renderOwner() {
+    var body = $('ownerBody');
+    body.textContent = '';
+    var ru = state.lang === 'ru';
+    var items = [
+      { ok: true, title: ru ? '🧾 Выручка за день' : '🧾 Doanh thu trong ngày', text: ru ? 'Все чеки, итог, наличные и QR отдельно.' : 'Tất cả hóa đơn, tổng, tiền mặt và QR.', go: function () { setView('receipts'); } },
+      { ok: true, title: ru ? '🏷️ Товары и цены' : '🏷️ Sản phẩm & giá', text: ru ? 'Изменить цену, включить или выключить товар, добавить новый.' : 'Sửa giá, bật/tắt, thêm món mới.', go: function () { $('productsBtn').click(); } },
+      { ok: true, title: ru ? '👥 Сотрудники' : '👥 Nhân viên', text: ru ? 'Одобрение, роли, блокировка, выход на всех устройствах.' : 'Duyệt, vai trò, khóa.', go: function () { $('usersBtn').click(); } },
+      { ok: false, title: ru ? '↩️ Отмены, смены, закрытие дня' : '↩️ Hủy hóa đơn, ca, đóng ngày', text: ru ? 'Отмена чека с причиной, начальная наличность, сверка кассы, расхождения.' : 'Hủy hóa đơn, tiền đầu ca, đối chiếu tiền mặt.' },
+      { ok: false, title: ru ? '💸 Закупки и расходы' : '💸 Nhập hàng & chi phí', text: ru ? 'Закупки у поставщиков, расходы (аренда, свет…), вложения, остатки сигарет и банок.' : 'Nhập hàng, chi phí, vốn đầu tư, tồn kho.' },
+      { ok: false, title: ru ? '🧮 Себестоимость' : '🧮 Giá vốn', text: ru ? 'Рецептуры напитков и себестоимость — для расчёта прибыли.' : 'Công thức và giá vốn để tính lãi.' },
+      { ok: false, title: ru ? '📈 Дашборд: прибыль, ROI, графики' : '📈 Báo cáo: lãi, ROI, biểu đồ', text: ru ? 'Продажи по дням, популярные товары, расходы, прибыль и окупаемость — когда будут данные о расходах и вложениях.' : 'Doanh thu theo ngày, món bán chạy, chi phí, lãi.' }
+    ];
+    items.forEach(function (it) {
+      var card = el('div', { className: 'card' }, [
+        el('div', { className: 'rc-head' }, [el('span', { className: 'name', text: it.title }), el('span', { className: 'pill ' + (it.ok ? 'cash' : 'draft'), text: it.ok ? t('available') : t('soon') })]),
+        el('div', { className: 'items-mini', text: it.text })
       ]);
-      card.addEventListener('click', function () { state.openOrderId = o.orderId; renderOrders(); window.scrollTo(0, 0); });
-      list.appendChild(card);
-    });
-  }
-
-  function renderOrderDetail(o) {
-    var d = $('orderDetail');
-    d.appendChild(el('button', { className: 'btn btn-ghost btn-small', type: 'button', text: t('back'), onclick: function () { state.openOrderId = null; renderOrders(); } }));
-    d.appendChild(el('div', { className: 'rc-head' }, [el('h1', { text: '🪑 ' + o.tableLabel }), el('span', { className: 'amt', text: money(o.total) })]));
-    var card = el('div', { className: 'card' });
-    o.items.forEach(function (i) {
-      card.appendChild(el('div', { className: 'item-row' }, [
-        el('div', { className: 'nm' }, [i.name + (i.variant ? ' (' + i.variant + ')' : ''), el('div', { className: 'items-mini', text: money(i.price) + ' × ' + i.qty + ' = ' + money(i.total) })]),
-        el('button', {
-          className: 'x', type: 'button', text: '✕', 'aria-label': 'remove',
-          onclick: function (ev) {
-            var b = ev.currentTarget;
-            confirmBox(t('removeItemQ') + ' ' + i.name, t('confirm'), true).then(function (ok) {
-              if (!ok) return;
-              busy(b, function () { return mutate('orders.removeItem', { orderId: o.orderId, itemId: i.itemId }).then(function () { return loadOrders(); }); });
-            });
-          }
-        })
-      ]));
-    });
-    if (!o.items.length) card.appendChild(el('p', { className: 'muted', text: errText('ORDER_EMPTY') }));
-    d.appendChild(card);
-    var add = el('button', { className: 'btn', type: 'button', text: '➕ ' + t('addItems') });
-    add.addEventListener('click', function () {
-      state.addMode = { orderId: o.orderId, tableLabel: o.tableLabel };
-      clearCart();
-      setView('sell');
-    });
-    d.appendChild(add);
-    ['cash', 'qr'].forEach(function (m) {
-      d.appendChild(el('button', {
-        className: 'btn btn-primary', type: 'button', text: (m === 'cash' ? '💵 ' : '📱 ') + t(m) + ' · ' + money(o.total),
-        onclick: function () { payOrderFlow(o, m); }
-      }));
-    });
-    var cancel = el('button', { className: 'btn btn-danger', type: 'button', text: t('cancelOrder') });
-    cancel.addEventListener('click', function () {
-      promptBox(t('cancelOrder') + ': ' + o.tableLabel, t('cancelReason')).then(function (reason) {
-        if (!reason) return;
-        busy(cancel, function () {
-          return mutate('orders.cancel', { orderId: o.orderId, reason: reason }).then(function () {
-            state.openOrderId = null;
-            toast(t('saved'));
-            return loadOrders();
-          });
-        });
-      });
-    });
-    d.appendChild(cancel);
-  }
-
-  function payOrderFlow(o, method) {
-    if (!o.items.length) return toast(errText('ORDER_EMPTY'));
-    var payload = { orderId: o.orderId, paymentMethod: method, expectedTotal: o.total };
-    var key = 'orderpay|' + JSON.stringify(payload);
-    var h = modal({
-      title: t('confirmPay') + ' · ' + o.tableLabel,
-      body: [el('div', { className: 'big-amount', text: money(o.total) }), el('p', { className: 'muted', text: (method === 'cash' ? '💵 ' : '📱 ') + t(method) })],
-      buttons: [
-        { label: t('confirm'), kind: 'btn-primary', onClick: function () { return submitOrderPay(h, payload, key); } },
-        { label: t('cancel'), kind: 'btn-ghost' }
-      ]
-    });
-  }
-
-  function submitOrderPay(h, payload, key) {
-    return mutate('orders.pay', payload, key).then(function (res) {
-      h.close();
-      state.openOrderId = null;
-      saleDone(res.sale);
-      return loadOrders();
-    }, function (e) {
-      h.close();
-      if (e.code === 'NETWORK') {
-        unknownResult(function () { return submitOrderPay(unknownResult.handle, payload, key); });
-        throw e;
-      }
-      if (!isAuthErr(e)) toast(errText(e.code));
-      return loadOrders().catch(function () {});
+      if (it.go) card.appendChild(el('button', { className: 'btn btn-small', type: 'button', text: t('open') + ' →', onclick: it.go }));
+      body.appendChild(card);
     });
   }
 
@@ -1067,11 +970,7 @@
     document.querySelectorAll('.js-logout').forEach(function (b) { b.addEventListener('click', function () { busy(b, logout); }); });
     document.querySelectorAll('.js-back-more').forEach(function (b) { b.addEventListener('click', function () { setView('more'); }); });
     document.querySelectorAll('.tab').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var v = b.getAttribute('data-view');
-        if (v === 'tables' && state.view === 'tables') state.openOrderId = null;
-        setView(v);
-      });
+      b.addEventListener('click', function () { setView(b.getAttribute('data-view')); });
     });
     $('checkAgainBtn').addEventListener('click', function () { var b = this; busy(b, function () { return refreshMe(false); }); });
     $('retryBootBtn').addEventListener('click', function () { $('retryBootBtn').hidden = true; boot(); });
@@ -1090,18 +989,8 @@
     });
     $('payCashBtn').addEventListener('click', function () { payFlow('cash'); });
     $('payQrBtn').addEventListener('click', function () { payFlow('qr'); });
-    $('toTableBtn').addEventListener('click', toTableFlow);
-    $('addToOrderBtn').addEventListener('click', function () { addToOrderFlow(this); });
-    $('addModeCancel').addEventListener('click', function () {
-      var orderId = state.addMode && state.addMode.orderId;
-      state.addMode = null;
-      clearCart();
-      state.openOrderId = orderId;
-      setView('tables');
-    });
 
-    // Столики и чеки
-    $('reloadOrdersBtn').addEventListener('click', function () { var b = this; busy(b, loadOrders); });
+    // Чеки
     $('reloadSalesBtn').addEventListener('click', function () { var b = this; busy(b, loadSales); });
     $('dayToday').addEventListener('click', function () { state.salesDay = 'today'; loadSales().catch(function (e) { toast(errText(e.code)); }); });
     $('dayYesterday').addEventListener('click', function () { state.salesDay = 'yesterday'; loadSales().catch(function (e) { toast(errText(e.code)); }); });
@@ -1123,6 +1012,8 @@
     $('reloadUsersBtn').addEventListener('click', function () { var b = this; busy(b, loadUsers); });
     $('productsBtn').addEventListener('click', function () { var b = this; busy(b, function () { return loadAdminProducts().then(function () { setView('products'); }); }); });
     $('addProductBtn').addEventListener('click', function () { editProduct(null); });
+    $('helpBtn').addEventListener('click', function () { setView('help'); });
+    $('ownerBtn').addEventListener('click', function () { setView('owner'); });
     $('logoutAllBtn').addEventListener('click', function () {
       var b = this;
       confirmBox(t('confirmLogoutAll')).then(function (ok) {
@@ -1135,7 +1026,7 @@
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'visible' && state.session) {
         refreshMe(true);
-        if (state.screen === 'app') { loadProducts().catch(function () {}); loadOrders().catch(function () {}); }
+        if (state.screen === 'app') loadProducts().catch(function () {});
       }
     });
   }

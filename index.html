@@ -66,22 +66,9 @@
     <section id="screen-app" class="screen app" hidden>
 
       <div id="view-sell" class="view">
-        <div id="addModeBar" class="mode-bar" hidden>
-          <span id="addModeText"></span>
-          <button id="addModeCancel" class="btn btn-small btn-ghost" type="button" data-i18n="cancel"></button>
-        </div>
         <div id="catBar" class="cat-bar" role="tablist"></div>
         <div id="productGrid" class="grid"></div>
         <p id="noProducts" class="muted" hidden data-i18n="noProducts"></p>
-      </div>
-
-      <div id="view-tables" class="view" hidden>
-        <div class="row-head">
-          <h1 data-i18n="tablesTitle"></h1>
-          <button id="reloadOrdersBtn" class="btn btn-small" type="button" data-i18n="refresh"></button>
-        </div>
-        <div id="ordersList" class="list"></div>
-        <div id="orderDetail" class="list" hidden></div>
       </div>
 
       <div id="view-receipts" class="view" hidden>
@@ -101,6 +88,8 @@
       <div id="view-more" class="view" hidden>
         <h1 id="homeHello"></h1>
         <p class="role-chip" id="homeRole"></p>
+        <button id="helpBtn" class="btn btn-primary" type="button" data-i18n="helpTitle"></button>
+        <button id="ownerBtn" class="btn" type="button" hidden data-i18n="ownerTitle"></button>
         <button id="productsBtn" class="btn" type="button" hidden data-i18n="productsTitle"></button>
         <button id="usersBtn" class="btn" type="button" hidden data-i18n="usersTitle"></button>
         <button id="pingBtn" class="btn" type="button" data-i18n="testAccess"></button>
@@ -117,6 +106,18 @@
           <button id="reloadUsersBtn" class="btn btn-small" type="button" data-i18n="refresh"></button>
         </div>
         <div id="usersList" class="list"></div>
+      </div>
+
+      <div id="view-help" class="view" hidden>
+        <button class="btn btn-ghost btn-small js-back-more" type="button" data-i18n="back"></button>
+        <h1 data-i18n="helpTitle"></h1>
+        <div id="helpBody" class="list"></div>
+      </div>
+
+      <div id="view-owner" class="view" hidden>
+        <button class="btn btn-ghost btn-small js-back-more" type="button" data-i18n="back"></button>
+        <h1 data-i18n="ownerTitle"></h1>
+        <div id="ownerBody" class="list"></div>
       </div>
 
       <div id="view-products" class="view" hidden>
@@ -144,14 +145,11 @@
     <div id="cartActions" class="cart-actions">
       <button id="payCashBtn" class="btn btn-primary" type="button" data-i18n="payCash"></button>
       <button id="payQrBtn" class="btn btn-primary" type="button" data-i18n="payQr"></button>
-      <button id="toTableBtn" class="btn" type="button" data-i18n="toTable"></button>
-      <button id="addToOrderBtn" class="btn btn-primary wide" type="button" hidden></button>
     </div>
   </div>
 
   <nav id="tabbar" class="tabbar" hidden>
     <button class="tab active" type="button" data-view="sell"><span>🛒</span><span data-i18n="tabSell"></span></button>
-    <button class="tab" type="button" data-view="tables"><span>🪑</span><span data-i18n="tabTables"></span><b id="tablesBadge" class="badge-n" hidden></b></button>
     <button class="tab" type="button" data-view="receipts"><span>🧾</span><span data-i18n="tabReceipts"></span></button>
     <button class="tab" type="button" data-view="more"><span>☰</span><span data-i18n="tabMore"></span></button>
   </nav>
