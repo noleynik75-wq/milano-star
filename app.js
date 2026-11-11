@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '202611111651'; // подставляется при публикации (tools/release-web.js)
+  var APP_VERSION = '202611111711'; // подставляется при публикации (tools/release-web.js)
   var CFG = window.MSH2_CONFIG || {};
   var LS = { session: 'msh2.session', lang: 'msh2.lang', products: 'msh2.products', cart: 'msh2.cart' };
 
@@ -771,6 +771,7 @@
       ['6. Xem hóa đơn', 'Tab 🧾 Hóa đơn: tổng tiền hôm nay, tiền mặt và QR riêng, danh sách hóa đơn.'],
       ['7. Ghi sai hóa đơn', 'Trước khi kết thúc ca: tab 🧾 Hóa đơn → "Hủy hóa đơn" → ghi lý do. Sau khi kết thúc ca hoặc hóa đơn của người khác: báo chủ quán. Mọi lần hủy chủ quán đều thấy. Nếu đã trả tiền lại cho khách — chủ quán làm "Hoàn tiền".'],
       ['8. Bắt đầu và kết thúc ca', 'Đầu giờ: 🛒 Bán hàng → "▶ Bắt đầu ca". Người đầu tiên trong ngày đếm tiền trong két và nhập số tiền. Hết giờ: Thêm → "⏹ Kết thúc ca". Cuối ngày người phụ trách (mẹ / chủ quán): Thêm → "💰 Két tiền & đóng ngày" → đếm tiền → "Đóng sổ ngày".'],
+      ['8b. Không tính tiền', 'Người nhà, mời khách, thử/tập pha chế: chọn món như bình thường → "🎁 Không tính tiền" → lý do và cho ai. Không vào doanh thu, nhưng trừ kho.'],
       ['9. Lấy tiền từ két', 'Lấy tiền trong két để mua đồ cho quán (sữa, đá…) hoặc việc khác: Thêm → "💸 Lấy tiền từ két" → số tiền, mua gì, ghi chú. Bắt buộc ghi lại — nếu không cuối ngày tiền trong két sẽ không khớp.'],
       ['10. Mất điện thoại', 'Báo ngay cho chủ quán — chủ quán sẽ đăng xuất tài khoản của bạn trên mọi thiết bị.'],
       ['11. Cập nhật ứng dụng', 'Ứng dụng tự cập nhật khi mở. Nếu thấy dòng xanh "Có phiên bản mới" — bấm vào đó. Hoặc: Thêm → "🔄 Cập nhật ứng dụng".']
@@ -784,6 +785,7 @@
       ['6. Чеки', 'Вкладка 🧾 Чеки: итог за сегодня, отдельно наличные и QR, список чеков.'],
       ['7. Ошибочный чек', 'До конца своей смены: вкладка 🧾 Чеки → «Отменить чек» → причина. После «Закончить смену» или чужой чек — через владельца. Все отмены видны владельцу. Если деньги гостю уже вернули — владелец оформляет «Возврат».'],
       ['8. Начало и конец смены', 'В начале: 🛒 Касса → «▶ Начать смену». Первый за день пересчитывает деньги в кассе и вводит сумму. В конце: Ещё → «⏹ Закончить смену». Вечером ответственный (мама / владелец): Ещё → «💰 Касса дня и закрытие» → пересчитать деньги → «Закрыть день».'],
+      ['8б. Без оплаты', 'Для своих (мама, дядя, сотрудники), угощение, проба/обучение: выберите товары как обычно → «🎁 Без оплаты» → причина и для кого. В выручку не идёт, но списывается со склада.'],
       ['9. Взято из кассы', 'Если взяли деньги из ящика — на покупку для кофейни (молоко, лёд…) или по другой причине: Ещё → «💸 Взято из кассы» → сумма, что купили, комментарий. Обязательно — иначе вечером касса не сойдётся.'],
       ['10. Потерян телефон', 'Сразу сообщите владельцу — он завершит ваш вход на всех устройствах.'],
       ['11. Обновление приложения', 'Приложение обновляется само при открытии. Если вверху синяя полоса «Есть новая версия» — нажмите её. Или: Ещё → «🔄 Обновить приложение».']
@@ -1918,7 +1920,7 @@
 
   function renderControl(c) {
     var card = el('div', { className: 'chart-card' }, [el('h3', { text: t('ctrlTitle') })]);
-    var nothing = !c.voidsByCashier.length && !c.days.length && !c.cashTaken.length;
+    var nothing = !c.voidsByCashier.length && !c.days.length && !c.cashTaken.length && !(c.free && c.free.count);
     if (nothing) { card.appendChild(el('p', { className: 'note-sm', text: '✅ ' + t('ctrlAllGood') })); return card; }
     if (c.voidsByCashier.length) {
       card.appendChild(el('div', { className: 'k', text: t('ctrlVoids') }));
@@ -1942,6 +1944,13 @@
         card.appendChild(el('div', { className: 'items-mini', text: '⚠️ ' + shortDate(d.date) + ': ' + parts.join(' · ') + (d.note ? ' · «' + d.note + '»' : '') }));
       });
     }
+    if (c.free && c.free.count) {
+      card.appendChild(el('div', { className: 'k', text: '🎁 ' + t('freeCtrl') + ': ' + c.free.count + ' · ' + money(c.free.value) }));
+      c.free.byReason.forEach(function (r) {
+        card.appendChild(el('div', { className: 'hbar' }, [el('div', { className: 'lbl' }, [el('span', { text: t('fr_' + r.reason) + ' · ' + r.count }), el('b', { text: money(r.value) })])]));
+      });
+      card.appendChild(el('div', { className: 'items-mini', text: t('freeByWho') + ': ' + c.free.byCashier.map(function (x) { return x.cashier + ' ' + x.count + ' (' + money(x.value) + ')'; }).join(', ') }));
+    }
     if (c.cashTaken.length) {
       card.appendChild(el('div', { className: 'k', text: t('ctrlTaken') }));
       c.cashTaken.forEach(function (x) {
@@ -1949,6 +1958,58 @@
       });
     }
     return card;
+  }
+
+  // ---------- Без оплаты (свои, угощение, проба/обучение) ----------
+  var FR = {
+    vi: {
+      freeBtn: '🎁 Không tính tiền', freeTitle: 'Không tính tiền', freeWhy: 'Lý do', freeValue: 'Giá trị theo menu',
+      fr_staff: 'Người nhà / nhân viên', fr_treat: 'Mời khách', fr_tasting: 'Thử / tập pha chế', fr_other: 'Khác',
+      freeNote: 'Cho ai / ghi chú (bắt buộc với "Khác")', freeDone: 'Đã ghi: không tính tiền', freeHint: 'Không tính vào doanh thu và két, nhưng trừ kho. Chủ quán thấy mọi lần.',
+      freeTotalL: 'Không tính tiền', freeCtrl: 'Không tính tiền', freeByWho: 'theo nhân viên'
+    },
+    ru: {
+      freeBtn: '🎁 Без оплаты', freeTitle: 'Без оплаты', freeWhy: 'Причина', freeValue: 'Стоимость по меню',
+      fr_staff: 'Для себя / своих', fr_treat: 'Угощение', fr_tasting: 'Проба / обучение', fr_other: 'Другое',
+      freeNote: 'Для кого / комментарий (для «Другое» — обязательно)', freeDone: 'Записано: без оплаты', freeHint: 'Не попадает в выручку и кассу, но списывается со склада. Владелец видит каждую выдачу.',
+      freeTotalL: 'Без оплаты', freeCtrl: 'Без оплаты', freeByWho: 'по сотрудникам'
+    }
+  };
+  Object.keys(FR).forEach(function (l) { Object.keys(FR[l]).forEach(function (k) { I18N[l][k] = FR[l][k]; }); });
+
+  function freeFlow() {
+    if (!state.cart.length || state.pendingSale) return;
+    var st = { reason: 'staff' };
+    var note = field(t('freeNote'), '');
+    var items = cartItemsPayload();
+    var key = 'free|' + JSON.stringify(items);
+    var h = modal({
+      title: '🎁 ' + t('freeTitle'),
+      body: [
+        el('p', { className: 'muted', text: t('freeValue') + ': ' + money(cartTotal()) + ' · ' + cartCount() + ' ' + t('items') }),
+        el('div', { className: 'k', text: t('freeWhy') }),
+        chipGroup(['staff', 'treat', 'tasting', 'other'], function (r) { return t('fr_' + r); }, st.reason, function (r) { st.reason = r; }),
+        note.node,
+        el('p', { className: 'note-sm', text: t('freeHint') })
+      ],
+      buttons: [
+        { label: t('confirm'), kind: 'btn-primary', onClick: function () {
+          var n = note.input.value.trim();
+          if (st.reason === 'other' && !n) { toast(t('freeNote')); return; }
+          return mutate('sales.free', { items: items, reason: st.reason, note: n }, key).then(function () {
+            h.close();
+            clearCart();
+            toast('🎁 ' + t('freeDone'));
+            state.salesData = null;
+          }, function (e) {
+            if (e.code === 'NO_SHIFT' || e.code === 'DAY_CLOSED') { h.close(); toast(errText(e.code)); return loadShift().catch(function () {}); }
+            if (!isAuthErr(e)) toast(errText(e.code));
+            throw e;
+          });
+        } },
+        { label: t('cancel'), kind: 'btn-ghost' }
+      ]
+    });
   }
 
   // ---------- Чеки ----------
@@ -1984,6 +2045,9 @@
     st.appendChild(el('div', { className: 'stat' }, [el('div', { className: 'k', text: '📱 ' + t('qr') }), el('div', { className: 'v', text: money(data.totals.qr) })]));
     st.appendChild(el('div', { className: 'stat' }, [el('div', { className: 'k', text: t('count') }), el('div', { className: 'v', text: String(data.totals.count) })]));
     st.appendChild(el('div', { className: 'stat' }, [el('div', { className: 'k', text: '↩️ ' + t('voidedN') }), el('div', { className: 'v', text: String(data.totals.voided || 0) })]));
+    if (data.totals.freeCount) {
+      st.appendChild(el('div', { className: 'stat' }, [el('div', { className: 'k', text: '🎁 ' + t('freeTotalL') }), el('div', { className: 'v', text: data.totals.freeCount + ' · ' + money(data.totals.freeValue) })]));
+    }
     if (data.totals.refunds) {
       st.appendChild(el('div', { className: 'stat' }, [el('div', { className: 'k', text: t('refunds') }), el('div', { className: 'v', text: '−' + money(data.totals.refunds) })]));
       st.appendChild(el('div', { className: 'stat' }, [el('div', { className: 'k', text: t('netRevenue') }), el('div', { className: 'v', text: money(data.totals.net) })]));
@@ -1993,16 +2057,18 @@
     if (!data.sales.length) { list.appendChild(el('p', { className: 'muted', text: t('noSales') })); return; }
     data.sales.forEach(function (s) {
       var voided = s.status === 'voided';
+      var isFree = s.status === 'free' || (voided && s.freeReason);
       var meta = timeOf(s.createdAt) + (s.tableLabel ? ' · 🪑 ' + s.tableLabel : '') + (s.cashier ? ' · ' + s.cashier : '');
       var items = s.items.map(function (i) { return i.name + (i.variant ? ' (' + i.variant + ')' : '') + ' ×' + i.qty; }).join(', ');
       var card = el('div', { className: 'card' + (voided ? ' voided-card' : '') }, [
         el('div', { className: 'rc-head' }, [
           el('span', { className: 'name', text: '#' + s.no }),
-          el('span', { className: 'pill ' + (voided ? 'off' : s.paymentMethod), text: voided ? t('voidedOne') : t(s.paymentMethod) }),
+          el('span', { className: 'pill ' + (voided ? 'off' : isFree ? 'draft' : s.paymentMethod), text: voided ? t('voidedOne') : isFree ? '🎁 ' + t('fr_' + (s.freeReason || 'other')) : t(s.paymentMethod) }),
           el('span', { className: 'amt', text: money(s.total) })
         ]),
         el('div', { className: 'meta', text: meta }),
         el('div', { className: 'items-mini', text: items }),
+        isFree && s.freeNote ? el('div', { className: 'items-mini', text: '🎁 ' + s.freeNote }) : null,
         voided && s.voidReason ? el('div', { className: 'items-mini', text: '↩️ ' + s.voidReason }) : null,
         s.refunded ? el('div', { className: 'items-mini', text: t('refunded') + ': ' + money(s.refunded) }) : null
       ]);
@@ -2236,6 +2302,7 @@
     });
     $('payCashBtn').addEventListener('click', function () { payFlow('cash'); });
     $('payQrBtn').addEventListener('click', function () { payFlow('qr'); });
+    $('freeBtn').addEventListener('click', freeFlow);
 
     // Чеки
     $('reloadSalesBtn').addEventListener('click', function () { var b = this; busy(b, loadSales); });
