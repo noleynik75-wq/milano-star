@@ -274,7 +274,7 @@
       renderSell();
       renderCart();
       if (state.view === 'help') renderHelp();
-      if (state.view === 'owner') { renderPeriodBar(); if (owner.tab === 'dash' && owner.dash) renderDash(); if (owner.tab === 'exp' && owner.exp) renderExpenses(); }
+      if (state.view === 'owner') { renderPeriodBar(); if (owner.tab === 'dash' && owner.dash) renderDash(); if (owner.tab === 'exp' && owner.exp) renderExpenses(); if (owner.tab === 'bak' && owner.bak) renderBackups(); }
       if (state.view === 'receipts' && state.salesData) renderSales();
       if (state.view === 'users' && state.usersData) renderUsers();
       if (state.view === 'products' && state.adminProducts) renderAdminProducts();
@@ -836,8 +836,13 @@
       (owner.tab === 'dash' && owner.dash ? ' · ' + t('updated') + ' ' + timeOf(owner.dash.generatedAt) : '');
     $('segDash').classList.toggle('active', owner.tab === 'dash');
     $('segExp').classList.toggle('active', owner.tab === 'exp');
+    $('segBak').classList.toggle('active', owner.tab === 'bak');
     $('dashBody').hidden = owner.tab !== 'dash';
     $('expBody').hidden = owner.tab !== 'exp';
+    $('bakBody').hidden = owner.tab !== 'bak';
+    // У резервных копий нет периода.
+    bar.hidden = owner.tab === 'bak';
+    $('periodLine').hidden = owner.tab === 'bak';
   }
 
   function pickCustom() {
@@ -861,7 +866,9 @@
     var r = periodRange();
     var req = owner.tab === 'dash'
       ? api('dashboard.get', r).then(function (d) { owner.dash = d; renderDash(); })
-      : api('expenses.list', r).then(function (d) { owner.exp = d; renderExpenses(); });
+      : owner.tab === 'bak'
+        ? api('backups.list').then(function (d) { owner.bak = d; renderBackups(); })
+        : api('expenses.list', r).then(function (d) { owner.exp = d; renderExpenses(); });
     return req.then(renderPeriodBar).catch(function (e) { if (!isAuthErr(e)) toast(errText(e.code)); });
   }
 
@@ -966,11 +973,82 @@
     return card;
   }
 
+  // ---------- Резервные копии ----------
+  var BK = {
+    vi: {
+      backupsTitle: '🗄 Sao lưu', bakOk: 'Sao lưu gần nhất', bakNone: 'Chưa có bản sao lưu nào.', bakProblem: '⚠️ Sao lưu có vấn đề',
+      bakNow: '💾 Sao lưu ngay', bakDone: 'Đã sao lưu và kiểm tra', bakSchedule: 'Tự động mỗi ngày lúc 3:00', bakNoSchedule: 'Chưa bật sao lưu tự động',
+      bakChecked: 'đã kiểm tra: số hóa đơn và tổng tiền khớp', bakOpen: 'Mở', bakKeep: 'Giữ: 30 bản hằng ngày, 12 bản hằng tháng',
+      k_daily: 'hằng ngày', k_monthly: 'hằng tháng', k_manual: 'thủ công', 'k_pre-update': 'trước cập nhật',
+      s_ok: '✓ OK', s_failed: '✗ Lỗi', s_mismatch: '✗ Không khớp', bakRestore: 'Cách khôi phục: xem hướng dẫn chủ quán, mục "Sao lưu".',
+      bakBanner: 'Sao lưu dữ liệu có vấn đề — mở tab Sao lưu.'
+    },
+    ru: {
+      backupsTitle: '🗄 Копии', bakOk: 'Последняя копия', bakNone: 'Резервных копий пока нет.', bakProblem: '⚠️ Проблема с резервными копиями',
+      bakNow: '💾 Сделать копию сейчас', bakDone: 'Копия сделана и проверена', bakSchedule: 'Автоматически каждый день в 3:00', bakNoSchedule: 'Ежедневная копия не включена',
+      bakChecked: 'проверена: число чеков и сумма совпадают', bakOpen: 'Открыть', bakKeep: 'Хранится: 30 ежедневных и 12 месячных копий',
+      k_daily: 'ежедневная', k_monthly: 'месячная', k_manual: 'ручная', 'k_pre-update': 'перед обновлением',
+      s_ok: '✓ OK', s_failed: '✗ Ошибка', s_mismatch: '✗ Не совпала', bakRestore: 'Как восстановить данные — в инструкции владельца, раздел «Резервные копии».',
+      bakBanner: 'Проблема с резервными копиями — откройте вкладку «Копии».'
+    }
+  };
+  Object.keys(BK).forEach(function (l) { Object.keys(BK[l]).forEach(function (k) { I18N[l][k] = BK[l][k]; }); });
+
+  function dateTime(iso) {
+    var d = new Date(iso);
+    return isNaN(d) ? '' : d.toLocaleString(state.lang === 'vi' ? 'vi-VN' : 'ru-RU', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function renderBackups() {
+    var d = owner.bak;
+    var body = $('bakBody');
+    body.textContent = '';
+    var h = d.health;
+    var head = el('div', { className: 'card' }, [
+      el('div', { className: 'name', text: h.problem ? t('bakProblem') : '✅ ' + t('bakOk') + ': ' + dateTime(h.lastOkAt) }),
+      h.problem && h.lastOkAt ? el('div', { className: 'items-mini', text: t('bakOk') + ': ' + dateTime(h.lastOkAt) }) : null,
+      !h.lastOkAt ? el('div', { className: 'items-mini', text: t('bakNone') }) : null,
+      h.lastError ? el('div', { className: 'items-mini', text: h.lastError }) : null,
+      el('div', { className: 'items-mini', text: (d.scheduled === false ? '⚠️ ' + t('bakNoSchedule') : '🕒 ' + t('bakSchedule')) + ' · ' + t('bakKeep') })
+    ]);
+    body.appendChild(head);
+    var now = el('button', { className: 'btn btn-primary', type: 'button', text: t('bakNow') });
+    now.addEventListener('click', function () {
+      busy(now, function () {
+        return api('backups.create').then(function (res) {
+          toast(res.backup.status === 'ok' ? '✅ ' + t('bakDone') : t('s_' + res.backup.status) + ' ' + (res.backup.error || ''));
+          return loadOwner();
+        });
+      });
+    });
+    body.appendChild(now);
+    d.backups.forEach(function (b) {
+      var card = el('div', { className: 'card' + (b.trashed ? ' voided-card' : '') }, [
+        el('div', { className: 'rc-head' }, [
+          el('span', { className: 'name', text: dateTime(b.createdAt) }),
+          el('span', { className: 'pill ' + (b.status === 'ok' ? 'cash' : 'off'), text: t('s_' + b.status) })
+        ]),
+        el('div', { className: 'meta', text: t('k_' + b.kind) + (b.status === 'ok' ? ' · ' + b.salesCount + ' ' + t('salesCountL') + ' · ' + money(b.salesTotal) : '') }),
+        b.status === 'ok' ? el('div', { className: 'items-mini', text: '✓ ' + t('bakChecked') }) : null,
+        b.error ? el('div', { className: 'items-mini', text: b.error }) : null
+      ]);
+      if (b.fileId) {
+        card.appendChild(el('a', { className: 'btn btn-small link-btn', href: 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(b.fileId) + '/edit', target: '_blank', rel: 'noopener', text: t('bakOpen') + ' ↗' }));
+      }
+      body.appendChild(card);
+    });
+    body.appendChild(el('p', { className: 'note-sm', text: t('bakRestore') }));
+  }
+
   function renderDash() {
     var d = owner.dash;
     var body = $('dashBody');
     body.textContent = '';
     var C1 = 'var(--series-1)', C2 = 'var(--series-2)', C3 = 'var(--series-3)';
+    if (d.backup && d.backup.problem) {
+      body.appendChild(el('button', { className: 'warn-box', type: 'button', style: 'text-align:left;border:0;width:100%', text: '⚠️ ' + t('bakBanner'),
+        onclick: function () { owner.tab = 'bak'; loadOwner(); } }));
+    }
 
     var k = el('div', { className: 'kpis' });
     k.appendChild(kpi(t('revenue'), money(d.revenue.total), '💵 ' + money(d.revenue.cash) + ' · 📱 ' + money(d.revenue.qr) +
@@ -1717,6 +1795,7 @@
     $('reloadCashDayBtn').addEventListener('click', function () { var b = this; busy(b, function () { return loadShift().then(loadCashDay); }); });
     $('segDash').addEventListener('click', function () { owner.tab = 'dash'; loadOwner(); });
     $('segExp').addEventListener('click', function () { owner.tab = 'exp'; loadOwner(); });
+    $('segBak').addEventListener('click', function () { owner.tab = 'bak'; loadOwner(); });
     $('logoutAllBtn').addEventListener('click', function () {
       var b = this;
       confirmBox(t('confirmLogoutAll')).then(function (ok) {

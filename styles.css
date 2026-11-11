@@ -179,6 +179,7 @@ body.in-app main { padding-bottom: 260px; }
   scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
 .cat-bar::-webkit-scrollbar { display: none; }
+.cat-bar[hidden], p[hidden] { display: none; }
 .cat {
   flex: 0 0 auto; min-height: 44px; padding: 8px 14px; border-radius: 999px;
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
