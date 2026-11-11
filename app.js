@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '202611111610'; // подставляется при публикации (tools/release-web.js)
+  var APP_VERSION = '202611111612'; // подставляется при публикации (tools/release-web.js)
   var CFG = window.MSH2_CONFIG || {};
   var LS = { session: 'msh2.session', lang: 'msh2.lang', products: 'msh2.products', cart: 'msh2.cart' };
 
@@ -727,7 +727,9 @@
       ['6. Xem hóa đơn', 'Tab 🧾 Hóa đơn: tổng tiền hôm nay, tiền mặt và QR riêng, danh sách hóa đơn.'],
       ['7. Ghi sai hóa đơn', 'Trong 15 phút: tab 🧾 Hóa đơn → "Hủy hóa đơn" → ghi lý do. Quá 15 phút hoặc hóa đơn của người khác: báo chủ quán. Nếu đã trả tiền lại cho khách — chủ quán làm "Hoàn tiền".'],
       ['8. Bắt đầu và kết thúc ca', 'Đầu giờ: 🛒 Bán hàng → "▶ Bắt đầu ca". Người đầu tiên trong ngày đếm tiền trong két và nhập số tiền. Hết giờ: Thêm → "⏹ Kết thúc ca". Cuối ngày người phụ trách (mẹ / chủ quán): Thêm → "💰 Két tiền & đóng ngày" → đếm tiền → "Đóng sổ ngày".'],
-      ['9. Mất điện thoại', 'Báo ngay cho chủ quán — chủ quán sẽ đăng xuất tài khoản của bạn trên mọi thiết bị.']
+      ['9. Lấy tiền từ két', 'Lấy tiền trong két để mua đồ cho quán (sữa, đá…) hoặc việc khác: Thêm → "💸 Lấy tiền từ két" → số tiền, mua gì, ghi chú. Bắt buộc ghi lại — nếu không cuối ngày tiền trong két sẽ không khớp.'],
+      ['10. Mất điện thoại', 'Báo ngay cho chủ quán — chủ quán sẽ đăng xuất tài khoản của bạn trên mọi thiết bị.'],
+      ['11. Cập nhật ứng dụng', 'Ứng dụng tự cập nhật khi mở. Nếu thấy dòng xanh "Có phiên bản mới" — bấm vào đó. Hoặc: Thêm → "🔄 Cập nhật ứng dụng".']
     ],
     ru: [
       ['1. Открыть приложение', 'Открывайте сайт в Chrome (Android) или Safari (iPhone), НЕ внутри Zalo/Messenger. В первый раз добавьте ярлык на главный экран (Chrome: ⋮ → «Добавить на главный экран»; iPhone: «Поделиться» → «На экран „Домой“»).'],
@@ -738,7 +740,9 @@
       ['6. Чеки', 'Вкладка 🧾 Чеки: итог за сегодня, отдельно наличные и QR, список чеков.'],
       ['7. Ошибочный чек', 'В течение 15 минут: вкладка 🧾 Чеки → «Отменить чек» → причина. Позже или чужой чек — через владельца. Если деньги гостю уже вернули — владелец оформляет «Возврат».'],
       ['8. Начало и конец смены', 'В начале: 🛒 Касса → «▶ Начать смену». Первый за день пересчитывает деньги в кассе и вводит сумму. В конце: Ещё → «⏹ Закончить смену». Вечером ответственный (мама / владелец): Ещё → «💰 Касса дня и закрытие» → пересчитать деньги → «Закрыть день».'],
-      ['9. Потерян телефон', 'Сразу сообщите владельцу — он завершит ваш вход на всех устройствах.']
+      ['9. Взято из кассы', 'Если взяли деньги из ящика — на покупку для кофейни (молоко, лёд…) или по другой причине: Ещё → «💸 Взято из кассы» → сумма, что купили, комментарий. Обязательно — иначе вечером касса не сойдётся.'],
+      ['10. Потерян телефон', 'Сразу сообщите владельцу — он завершит ваш вход на всех устройствах.'],
+      ['11. Обновление приложения', 'Приложение обновляется само при открытии. Если вверху синяя полоса «Есть новая версия» — нажмите её. Или: Ещё → «🔄 Обновить приложение».']
     ]
   };
 
