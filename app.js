@@ -331,9 +331,12 @@
     renderGsiButton();
   }
 
+  var gsiTimer = null;
+  var gsiRenderSeq = 0;
   function renderGsiButton() {
+    clearTimeout(gsiTimer);
     if (!(window.google && google.accounts && google.accounts.id)) {
-      setTimeout(renderGsiButton, 300);
+      gsiTimer = setTimeout(renderGsiButton, 300);
       return;
     }
     if (!gsiReady) {
@@ -346,11 +349,17 @@
       });
       gsiReady = true;
     }
+    // Кнопка Google вставляется асинхронно, поэтому рисуем её в новый
+    // контейнер и оставляем только последний — иначе возможны две кнопки.
     var box = $('gsiButton');
+    var seq = ++gsiRenderSeq;
+    var holder = document.createElement('div');
     box.textContent = '';
-    google.accounts.id.renderButton(box, {
+    box.appendChild(holder);
+    google.accounts.id.renderButton(holder, {
       theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: state.lang, width: 300
     });
+    if (seq !== gsiRenderSeq && holder.parentNode) holder.parentNode.removeChild(holder);
   }
 
   function onGoogleCredential(resp) {
