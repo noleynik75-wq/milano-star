@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '202611111612'; // подставляется при публикации (tools/release-web.js)
+  var APP_VERSION = '202611111625'; // подставляется при публикации (tools/release-web.js)
   var CFG = window.MSH2_CONFIG || {};
   var LS = { session: 'msh2.session', lang: 'msh2.lang', products: 'msh2.products', cart: 'msh2.cart' };
 
@@ -249,8 +249,27 @@
     renderCart();
   }
 
+  /**
+   * Автообновление «Чеков» и раздела владельца раз в 30 секунд, пока экран открыт
+   * и виден: новые чеки с других телефонов появляются сами. Не трогаем экран,
+   * если открыто окно (ввод суммы и т.п.) или приложение свёрнуто.
+   */
+  var autoRefreshTimer = null;
+  var AUTO_REFRESH_MS = 30000;
+  function startAutoRefresh(name) {
+    clearInterval(autoRefreshTimer);
+    autoRefreshTimer = null;
+    if (name !== 'receipts' && name !== 'owner') return;
+    autoRefreshTimer = setInterval(function () {
+      if (document.hidden || document.querySelector('.modal-back') || state.view !== name) return;
+      if (name === 'receipts') loadSales().catch(function () {});
+      else if (owner.tab === 'dash' || owner.tab === 'exp') loadOwner();
+    }, AUTO_REFRESH_MS);
+  }
+
   function setView(name) {
     state.view = name;
+    startAutoRefresh(name);
     document.querySelectorAll('#screen-app .view').forEach(function (v) { v.hidden = v.id !== 'view-' + name; });
     var tabName = ['users', 'products', 'help', 'cashday'].indexOf(name) >= 0 ? 'more' : name;
     document.querySelectorAll('.tab').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-view') === tabName); });
@@ -1857,7 +1876,8 @@
     var data = state.salesData;
     $('dayToday').classList.toggle('active', state.salesDay === 'today');
     $('dayYesterday').classList.toggle('active', state.salesDay === 'yesterday');
-    $('salesScope').textContent = data.date + ' · ' + (data.scope === 'all' ? t('scopeAll') : t('scopeOwn'));
+    $('salesScope').textContent = data.date + ' · ' + (data.scope === 'all' ? t('scopeAll') : t('scopeOwn')) +
+      ' · ' + t('updated') + ' ' + new Date().toLocaleTimeString(state.lang === 'vi' ? 'vi-VN' : 'ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     var st = $('salesTotals');
     st.textContent = '';
     st.appendChild(el('div', { className: 'stat big' }, [el('div', { className: 'k', text: t('total') }), el('div', { className: 'v', text: money(data.totals.total) })]));
