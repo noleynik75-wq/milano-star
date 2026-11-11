@@ -251,11 +251,13 @@
   function setView(name) {
     state.view = name;
     document.querySelectorAll('#screen-app .view').forEach(function (v) { v.hidden = v.id !== 'view-' + name; });
-    var tabName = ['users', 'products', 'help'].indexOf(name) >= 0 ? 'more' : name;
+    var tabName = ['users', 'products', 'help', 'cashday'].indexOf(name) >= 0 ? 'more' : name;
     document.querySelectorAll('.tab').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-view') === tabName); });
     if (name === 'receipts') loadSales().catch(function () {});
     if (name === 'help') renderHelp();
     if (name === 'owner') loadOwner();
+    if (name === 'more') loadShift().catch(function () {});
+    if (name === 'cashday') loadCashDay();
     if (name === 'sell') renderSell();
     renderCart();
     window.scrollTo(0, 0);
@@ -307,6 +309,7 @@
         show('app');
         setView(state.view || 'sell');
         loadProducts().catch(function () {});
+        loadShift().catch(function () {});
       }
       return;
     }
@@ -501,6 +504,12 @@
 
   function renderSell() {
     if (state.screen !== 'app') return;
+    // Без открытой смены продавать нельзя — вместо меню кнопка «Начать смену».
+    var gated = !hasShift();
+    $('shiftGate').hidden = !gated;
+    $('catBar').hidden = gated;
+    $('productGrid').hidden = gated;
+    if (gated) { $('noProducts').hidden = true; renderShiftGate(); return; }
     var cats = categories();
     if (state.category && cats.indexOf(state.category) < 0) state.category = '';
     var bar = $('catBar');
@@ -588,7 +597,7 @@
 
   function renderCart() {
     var panel = $('cartPanel');
-    var visible = state.screen === 'app' && state.view === 'sell' && state.cart.length > 0;
+    var visible = state.screen === 'app' && state.view === 'sell' && state.cart.length > 0 && hasShift();
     panel.hidden = !visible;
     if (!visible) return;
     $('cartCount').textContent = cartCount() + ' ' + t('items') + (state.cartOpen ? ' ▾' : ' ▴');
@@ -675,6 +684,7 @@
       }
       state.pendingSale = false;
       h.close();
+      if (e.code === 'NO_SHIFT' || e.code === 'DAY_CLOSED') { toast(errText(e.code)); return loadShift().catch(function () {}); }
       if (!isAuthErr(e)) return handleCatalogError(e).catch(function (err) { if (err.code !== 'PRICE_CHANGED' && err.code !== 'PRODUCT_UNAVAILABLE') toast(errText(err.code)); });
     });
   }
@@ -710,8 +720,8 @@
       ['4. Thanh toán', 'Khách trả tiền mặt → bấm 💵 Tiền mặt. Khách chuyển khoản → bấm 📱 QR, nhưng CHỈ sau khi đã thấy tiền vào tài khoản. Kiểm tra số tiền → Xác nhận.'],
       ['5. Đã lưu chưa?', 'Hóa đơn chỉ được lưu khi thấy "✅ Đã lưu hóa đơn #…". Nếu hiện "Chưa rõ kết quả" (mất mạng) — KHÔNG bán lại, bấm "Kiểm tra lại". Hóa đơn sẽ không bị lưu hai lần.'],
       ['6. Xem hóa đơn', 'Tab 🧾 Hóa đơn: tổng tiền hôm nay, tiền mặt và QR riêng, danh sách hóa đơn.'],
-      ['7. Ghi sai hóa đơn', 'Hiện chưa hủy được trong ứng dụng. Báo ngay cho chủ quán số hóa đơn (#) và lý do. Chức năng hủy sẽ có trong bản sau.'],
-      ['8. Hết giờ làm', 'Hiện chưa có mở/đóng ca trong ứng dụng — sẽ có trong bản sau. Khi đổi người, bấm Thêm → Đăng xuất nếu dùng chung điện thoại.'],
+      ['7. Ghi sai hóa đơn', 'Trong 15 phút: tab 🧾 Hóa đơn → "Hủy hóa đơn" → ghi lý do. Quá 15 phút hoặc hóa đơn của người khác: báo chủ quán. Nếu đã trả tiền lại cho khách — chủ quán làm "Hoàn tiền".'],
+      ['8. Bắt đầu và kết thúc ca', 'Đầu giờ: 🛒 Bán hàng → "▶ Bắt đầu ca". Người đầu tiên trong ngày đếm tiền trong két và nhập số tiền. Hết giờ: Thêm → "⏹ Kết thúc ca". Cuối ngày người phụ trách (mẹ / chủ quán): Thêm → "💰 Két tiền & đóng ngày" → đếm tiền → "Đóng sổ ngày".'],
       ['9. Mất điện thoại', 'Báo ngay cho chủ quán — chủ quán sẽ đăng xuất tài khoản của bạn trên mọi thiết bị.']
     ],
     ru: [
@@ -721,8 +731,8 @@
       ['4. Оплата', 'Наличные → 💵 Наличные. Перевод → 📱 QR, но ТОЛЬКО после того, как деньги пришли на счёт (приложение банк не проверяет). Проверьте сумму → Подтвердить.'],
       ['5. Сохранилось ли?', 'Чек сохранён, только когда видно «✅ Чек сохранён №…». Если «Результат не известен» (пропала связь) — НЕ пробивайте заново, нажмите «Проверить». Дубля не будет.'],
       ['6. Чеки', 'Вкладка 🧾 Чеки: итог за сегодня, отдельно наличные и QR, список чеков.'],
-      ['7. Ошибочный чек', 'Пока отменить в приложении нельзя. Сразу сообщите владельцу номер чека (#) и причину. Отмена появится в следующей версии.'],
-      ['8. Конец смены', 'Открытия и закрытия смены пока нет — появится в следующей версии. Если телефон общий, при смене человека: Ещё → Выйти.'],
+      ['7. Ошибочный чек', 'В течение 15 минут: вкладка 🧾 Чеки → «Отменить чек» → причина. Позже или чужой чек — через владельца. Если деньги гостю уже вернули — владелец оформляет «Возврат».'],
+      ['8. Начало и конец смены', 'В начале: 🛒 Касса → «▶ Начать смену». Первый за день пересчитывает деньги в кассе и вводит сумму. В конце: Ещё → «⏹ Закончить смену». Вечером ответственный (мама / владелец): Ещё → «💰 Касса дня и закрытие» → пересчитать деньги → «Закрыть день».'],
       ['9. Потерян телефон', 'Сразу сообщите владельцу — он завершит ваш вход на всех устройствах.']
     ]
   };
@@ -963,7 +973,8 @@
     var C1 = 'var(--series-1)', C2 = 'var(--series-2)', C3 = 'var(--series-3)';
 
     var k = el('div', { className: 'kpis' });
-    k.appendChild(kpi(t('revenue'), money(d.revenue.total), '💵 ' + money(d.revenue.cash) + ' · 📱 ' + money(d.revenue.qr), true));
+    k.appendChild(kpi(t('revenue'), money(d.revenue.total), '💵 ' + money(d.revenue.cash) + ' · 📱 ' + money(d.revenue.qr) +
+      (d.revenue.refunds ? ' · ' + t('refunds') + ' −' + money(d.revenue.refunds) + ' → ' + money(d.revenue.net) : ''), true));
     k.appendChild(kpi(t('checks'), String(d.revenue.count)));
     k.appendChild(kpi(t('avgCheck'), d.revenue.avg === null ? t('noData') : money(d.revenue.avg)));
     k.appendChild(kpi(t('purchases'), money(d.spend.purchase)));
@@ -1117,6 +1128,292 @@
     });
   }
 
+  // ---------- Смены и касса дня ----------
+  var SH = {
+    vi: {
+      shiftNone: 'Chưa bắt đầu ca', shiftStart: '▶ Bắt đầu ca', shiftOpenSince: 'Ca đang mở từ', shiftEnd: '⏹ Kết thúc ca',
+      shiftEndQ: 'Kết thúc ca làm việc của bạn?', shiftEnded: 'Đã kết thúc ca', shiftLoading: 'Đang kiểm tra ca…',
+      dayClosedGate: 'Ngày hôm nay đã đóng sổ. Liên hệ chủ quán nếu cần bán tiếp.',
+      gateText: 'Bấm "Bắt đầu ca" trước khi bán hàng.', openingCashQ: 'Tiền mặt trong két lúc mở quán (VND)',
+      openingHint: 'Bạn là người đầu tiên hôm nay — hãy đếm tiền trong két và nhập số tiền.',
+      staleShift: 'Ca hôm trước chưa kết thúc — sẽ tự kết thúc khi bắt đầu ca mới.',
+      unclosedDays: 'Có ngày chưa đóng sổ:', cashDayTitle: '💰 Két tiền & đóng ngày',
+      opening: 'Tiền đầu ngày', cashSalesL: '+ Bán tiền mặt', cashRefundsL: '− Hoàn tiền mặt', movInL: '+ Nộp thêm vào két',
+      movOutL: '− Rút khỏi két', cashExpL: '− Chi từ két', expectedL: '= Tiền phải có trong két', qrInfo: 'QR (không vào két)',
+      openShiftsL: 'Ca đang mở', noneOpen: 'không có', movIn: '+ Nộp tiền', movOut: '− Rút tiền', movReason: 'Lý do',
+      closeDay: '🔒 Đóng sổ ngày', actualCash: 'Tiền thực tế đếm được (VND)', difference: 'Chênh lệch', diffNote: 'Giải thích chênh lệch',
+      dayClosedInfo: 'Đã đóng sổ', reopenDay: 'Mở lại ngày', reopenReason: 'Lý do mở lại', dayNotOpened: 'Hôm nay chưa ai bắt đầu ca.',
+      voidSale: 'Hủy hóa đơn', voidReasonQ: 'Lý do', refundSale: 'Hoàn tiền', refundAmount: 'Số tiền hoàn (VND)',
+      refundHint: 'Chỉ dùng khi đã trả lại tiền cho khách. Hoàn tiền mặt sẽ trừ vào két hôm nay.',
+      voidedN: 'Đã hủy', voidedOne: 'Đã hủy', refunds: 'Hoàn tiền', netRevenue: 'Doanh thu thực', refunded: 'Đã hoàn',
+      salesCountL: 'hóa đơn', shiftTotals: 'Kết quả ca của bạn',
+      err_NO_SHIFT: 'Bạn chưa bắt đầu ca. Bấm "Bắt đầu ca".', err_DAY_CLOSED: 'Ngày đã đóng sổ.', err_DAY_CHANGED: 'Vừa có giao dịch mới — số tiền đã được cập nhật, kiểm tra lại.',
+      err_NOTE_REQUIRED: 'Có chênh lệch — hãy ghi giải thích.', err_VOID_WINDOW_PASSED: 'Đã quá thời gian tự hủy. Báo chủ quán.',
+      err_ALREADY_VOIDED: 'Đã hủy trước đó.', err_REFUND_TOO_BIG: 'Số tiền hoàn lớn hơn số đã trả.', err_DAY_NOT_OPEN: 'Hôm nay chưa mở két.',
+      err_HAS_REFUNDS: 'Hóa đơn đã có hoàn tiền — không hủy được.', err_OPENING_CASH_REQUIRED: 'Cần nhập tiền đầu ngày.'
+    },
+    ru: {
+      shiftNone: 'Смена не начата', shiftStart: '▶ Начать смену', shiftOpenSince: 'Смена открыта с', shiftEnd: '⏹ Закончить смену',
+      shiftEndQ: 'Закончить вашу смену?', shiftEnded: 'Смена закончена', shiftLoading: 'Проверяю смену…',
+      dayClosedGate: 'Сегодняшний день уже закрыт. Если нужно продавать дальше — обратитесь к владельцу.',
+      gateText: 'Перед продажей нажмите «Начать смену».', openingCashQ: 'Наличные в кассе при открытии (VND)',
+      openingHint: 'Вы первый сегодня — пересчитайте деньги в кассе и введите сумму.',
+      staleShift: 'Вчерашняя смена не закрыта — она закроется автоматически при начале новой.',
+      unclosedDays: 'Есть незакрытые дни:', cashDayTitle: '💰 Касса дня и закрытие',
+      opening: 'Начальная наличность', cashSalesL: '+ Наличные продажи', cashRefundsL: '− Наличные возвраты', movInL: '+ Внесения',
+      movOutL: '− Изъятия', cashExpL: '− Траты из кассы', expectedL: '= Должно быть в кассе', qrInfo: 'QR (в кассу не попадает)',
+      openShiftsL: 'Открытые смены', noneOpen: 'нет', movIn: '+ Внесение', movOut: '− Изъятие', movReason: 'Причина',
+      closeDay: '🔒 Закрыть день', actualCash: 'Фактически в кассе (VND)', difference: 'Расхождение', diffNote: 'Объяснение расхождения',
+      dayClosedInfo: 'День закрыт', reopenDay: 'Открыть день заново', reopenReason: 'Причина', dayNotOpened: 'Сегодня смену ещё никто не начинал.',
+      voidSale: 'Отменить чек', voidReasonQ: 'Причина', refundSale: 'Возврат', refundAmount: 'Сумма возврата (VND)',
+      refundHint: 'Только если деньги действительно вернули гостю. Наличный возврат уменьшит сегодняшнюю кассу.',
+      voidedN: 'Отменено', voidedOne: 'Отменён', refunds: 'Возвраты', netRevenue: 'Чистая выручка', refunded: 'Возвращено',
+      salesCountL: 'чеков', shiftTotals: 'Итоги вашей смены',
+      err_NO_SHIFT: 'Смена не начата. Нажмите «Начать смену».', err_DAY_CLOSED: 'День уже закрыт.', err_DAY_CHANGED: 'Только что прошла новая операция — сумма обновлена, проверьте ещё раз.',
+      err_NOTE_REQUIRED: 'Есть расхождение — напишите объяснение.', err_VOID_WINDOW_PASSED: 'Время на самостоятельную отмену прошло. Обратитесь к владельцу.',
+      err_ALREADY_VOIDED: 'Уже отменено.', err_REFUND_TOO_BIG: 'Сумма возврата больше оплаченной.', err_DAY_NOT_OPEN: 'Сегодня касса ещё не открыта.',
+      err_HAS_REFUNDS: 'По чеку уже был возврат — отменить нельзя.', err_OPENING_CASH_REQUIRED: 'Нужно ввести начальную наличность.'
+    }
+  };
+  Object.keys(SH).forEach(function (l) { Object.keys(SH[l]).forEach(function (k) { I18N[l][k] = SH[l][k]; }); });
+
+  var CASH_ROLES_UI = ['owner', 'admin', 'senior_cashier'];
+  function canCash() { return !!(state.user && CASH_ROLES_UI.indexOf(state.user.role) >= 0); }
+  function hasShift() { return !!(state.shiftInfo && state.shiftInfo.shift); }
+
+  function loadShift() {
+    return api('shift.status').then(function (res) {
+      state.shiftInfo = res;
+      renderSell();
+      renderCart();
+      renderShiftCard();
+    });
+  }
+
+  function renderShiftGate() {
+    var g = $('shiftGate');
+    g.textContent = '';
+    var info = state.shiftInfo;
+    if (!info) { g.appendChild(el('p', { className: 'muted', text: t('shiftLoading') })); return; }
+    if (info.day.status === 'closed') {
+      g.appendChild(el('div', { className: 'big', text: '🔒' }));
+      g.appendChild(el('p', { text: t('dayClosedGate') }));
+      return;
+    }
+    g.appendChild(el('div', { className: 'big', text: '☕' }));
+    g.appendChild(el('h2', { text: t('shiftNone'), style: 'margin:0' }));
+    g.appendChild(el('p', { className: 'muted', text: t('gateText') }));
+    if (info.staleShift) g.appendChild(el('div', { className: 'warn-box', text: t('staleShift') }));
+    g.appendChild(el('button', { className: 'btn btn-primary', type: 'button', text: t('shiftStart'), onclick: function (ev) { startShiftFlow(ev.currentTarget); } }));
+  }
+
+  function startShiftFlow(btn) {
+    var info = state.shiftInfo;
+    if (info && info.day.status === 'none') return openingCashFlow();
+    busy(btn, function () {
+      return mutate('shift.open', {}).then(function () { return loadShift(); }, function (e) {
+        if (e.code === 'OPENING_CASH_REQUIRED') { openingCashFlow(); return; }
+        throw e;
+      });
+    });
+  }
+
+  function openingCashFlow() {
+    var f = field(t('openingCashQ'), '', 'text');
+    f.input.setAttribute('inputmode', 'numeric');
+    var prev = el('div', { className: 'note-sm' });
+    f.input.addEventListener('input', function () { var n = Number(f.input.value.replace(/[^\d]/g, '')); prev.textContent = f.input.value ? '= ' + money(n) : ''; });
+    var h = modal({
+      title: t('shiftStart'),
+      body: [el('p', { className: 'muted', text: t('openingHint') }), f.node, prev],
+      buttons: [
+        { label: t('confirm'), kind: 'btn-primary', onClick: function () {
+          if (f.input.value.trim() === '') return;
+          var n = Number(f.input.value.replace(/[^\d]/g, ''));
+          return mutate('shift.open', { openingCash: n }).then(function () { h.close(); return loadShift(); },
+            function (e) { if (!isAuthErr(e)) toast(errText(e.code)); throw e; });
+        } },
+        { label: t('cancel'), kind: 'btn-ghost' }
+      ]
+    });
+  }
+
+  function renderShiftCard() {
+    var c = $('shiftCard');
+    if (!c) return;
+    c.textContent = '';
+    var info = state.shiftInfo;
+    $('cashDayBtn').hidden = !canCash();
+    if (!info) return;
+    if (info.shift) {
+      c.appendChild(el('div', { className: 'name', text: '🟢 ' + t('shiftOpenSince') + ' ' + timeOf(info.shift.openedAt) }));
+      c.appendChild(el('button', { className: 'btn', type: 'button', text: t('shiftEnd'), onclick: function (ev) { endShiftFlow(ev.currentTarget); } }));
+    } else {
+      c.appendChild(el('div', { className: 'name', text: '⚪ ' + t('shiftNone') }));
+      if (info.day.status !== 'closed') c.appendChild(el('button', { className: 'btn btn-primary', type: 'button', text: t('shiftStart'), onclick: function (ev) { startShiftFlow(ev.currentTarget); } }));
+    }
+    if (info.unclosedDays && info.unclosedDays.length) {
+      c.appendChild(el('div', { className: 'warn-box', text: '⚠️ ' + t('unclosedDays') + ' ' + info.unclosedDays.join(', ') }));
+    }
+  }
+
+  function endShiftFlow(btn) {
+    confirmBox(t('shiftEndQ')).then(function (ok) {
+      if (!ok) return;
+      busy(btn, function () {
+        return mutate('shift.close', {}).then(function (res) {
+          var tt = res.totals;
+          modal({
+            title: '✅ ' + t('shiftEnded'),
+            body: [
+              el('p', { className: 'muted', text: t('shiftTotals') }),
+              el('div', { className: 'big-amount', text: money(tt.total) }),
+              el('p', { text: '💵 ' + money(tt.cash) + ' · 📱 ' + money(tt.qr) + ' · ' + tt.count + ' ' + t('salesCountL') + (tt.voided ? ' · ↩️ ' + tt.voided : '') })
+            ],
+            buttons: [{ label: t('ok'), kind: 'btn-primary' }]
+          });
+          return loadShift();
+        });
+      });
+    });
+  }
+
+  // Касса дня
+  var cashDay = { date: null, sum: null };
+
+  function loadCashDay() {
+    var info = state.shiftInfo;
+    var dates = [(info && info.today) || null].concat((info && info.unclosedDays) || []).filter(Boolean);
+    if (!cashDay.date || dates.indexOf(cashDay.date) < 0) cashDay.date = dates[0] || null;
+    var bar = $('cashDayDates');
+    bar.textContent = '';
+    if (dates.length > 1) {
+      dates.forEach(function (d, i) {
+        bar.appendChild(el('button', {
+          className: 'cat' + (d === cashDay.date ? ' active' : ''), type: 'button', text: (i === 0 ? t('today') + ' ' : '⚠️ ') + shortDate(d),
+          onclick: function () { cashDay.date = d; loadCashDay(); }
+        }));
+      });
+    }
+    return api('cashday.summary', cashDay.date ? { date: cashDay.date } : {}).then(function (res) {
+      cashDay.sum = res.summary;
+      renderCashDay();
+    }).catch(function (e) { if (!isAuthErr(e)) toast(errText(e.code)); });
+  }
+
+  function line(label, value, cls) {
+    return el('div', { className: 'ln' + (cls ? ' ' + cls : '') }, [el('span', { text: label }), el('b', { text: value })]);
+  }
+
+  function renderCashDay() {
+    var s = cashDay.sum;
+    var body = $('cashDayBody');
+    body.textContent = '';
+    if (s.status === 'none') { body.appendChild(el('p', { className: 'muted', text: t('dayNotOpened') })); return; }
+    var calc = el('div', { className: 'card calc' }, [
+      line(t('opening'), money(s.openingCash)),
+      line(t('cashSalesL'), money(s.cashSales)),
+      s.cashRefunds ? line(t('cashRefundsL'), money(s.cashRefunds)) : null,
+      s.movementsIn ? line(t('movInL'), money(s.movementsIn)) : null,
+      s.movementsOut ? line(t('movOutL'), money(s.movementsOut)) : null,
+      s.cashExpenses ? line(t('cashExpL'), money(s.cashExpenses)) : null,
+      line(t('expectedL'), money(s.expected), 'total')
+    ]);
+    body.appendChild(calc);
+    body.appendChild(el('div', { className: 'card calc' }, [
+      line(t('qrInfo'), money(s.qrSales)),
+      line(t('count'), String(s.salesCount) + (s.voidedCount ? ' · ↩️ ' + s.voidedCount : '')),
+      line(t('openShiftsL'), s.openShifts.length ? s.openShifts.map(function (x) { return x.name; }).join(', ') : t('noneOpen'))
+    ]));
+    if (s.movements.length) {
+      body.appendChild(el('div', { className: 'card' }, s.movements.map(function (m) {
+        return el('div', { className: 'items-mini', text: (m.type === 'in' ? '＋ ' : '－ ') + money(m.amount) + ' · ' + m.reason + ' · ' + m.by + ' ' + timeOf(m.at) });
+      })));
+    }
+    if (s.status === 'closed') {
+      var c = s.closed;
+      body.appendChild(el('div', { className: 'card calc' }, [
+        el('div', { className: 'name', text: '🔒 ' + t('dayClosedInfo') + ' · ' + c.by + ' ' + timeOf(c.at) }),
+        line(t('expectedL'), money(c.expected)),
+        line(t('actualCash'), money(c.actual)),
+        el('div', { className: 'ln' }, [el('span', { text: t('difference') }), el('b', { className: c.difference === 0 ? 'diff-ok' : 'diff-bad', text: (c.difference > 0 ? '+' : '') + money(c.difference) })]),
+        c.note ? el('div', { className: 'items-mini', text: c.note }) : null
+      ]));
+      if (isAdmin()) {
+        body.appendChild(el('button', { className: 'btn btn-ghost', type: 'button', text: t('reopenDay'), onclick: function (ev) {
+          var b = ev.currentTarget;
+          promptBox(t('reopenDay') + ' ' + s.date, t('reopenReason')).then(function (r) {
+            if (r) busy(b, function () { return mutate('cashday.reopen', { date: s.date, reason: r }).then(function () { toast(t('saved')); return loadShift().then(loadCashDay); }); });
+          });
+        } }));
+      }
+      return;
+    }
+    var isToday = state.shiftInfo && s.date === state.shiftInfo.today;
+    if (isToday) {
+      body.appendChild(el('div', { className: 'row' }, [
+        el('button', { className: 'btn', type: 'button', text: t('movIn'), onclick: function () { movementFlow('in'); } }),
+        el('button', { className: 'btn', type: 'button', text: t('movOut'), onclick: function () { movementFlow('out'); } })
+      ]));
+    }
+    body.appendChild(el('button', { className: 'btn btn-primary', type: 'button', text: t('closeDay'), onclick: closeDayFlow }));
+  }
+
+  function movementFlow(type) {
+    var amount = field(t('amount'), '', 'text');
+    amount.input.setAttribute('inputmode', 'numeric');
+    var reason = field(t('movReason'), '');
+    var h = modal({
+      title: type === 'in' ? t('movIn') : t('movOut'),
+      body: [amount.node, reason.node],
+      buttons: [
+        { label: t('confirm'), kind: 'btn-primary', onClick: function () {
+          var n = Number(amount.input.value.replace(/[^\d]/g, ''));
+          var r = reason.input.value.trim();
+          if (!n || !r) { toast(errText('BAD_REQUEST')); return; }
+          return mutate('cashday.movement', { type: type, amount: n, reason: r }).then(function () { h.close(); toast(t('saved')); return loadCashDay(); },
+            function (e) { if (!isAuthErr(e)) toast(errText(e.code)); throw e; });
+        } },
+        { label: t('cancel'), kind: 'btn-ghost' }
+      ]
+    });
+  }
+
+  function closeDayFlow() {
+    var s = cashDay.sum;
+    var actual = field(t('actualCash'), '', 'text');
+    actual.input.setAttribute('inputmode', 'numeric');
+    var diffBox = el('div', { className: 'ln' });
+    var note = field(t('diffNote'), '');
+    var upd = function () {
+      diffBox.textContent = '';
+      if (actual.input.value.trim() === '') return;
+      var d = Number(actual.input.value.replace(/[^\d]/g, '')) - s.expected;
+      diffBox.appendChild(el('span', { text: t('difference') + ': ' }));
+      diffBox.appendChild(el('b', { className: d === 0 ? 'diff-ok' : 'diff-bad', text: (d > 0 ? '+' : '') + money(d) + (d === 0 ? ' ✓' : '') }));
+    };
+    actual.input.addEventListener('input', upd);
+    var h = modal({
+      title: t('closeDay') + ' · ' + shortDate(s.date),
+      body: [el('p', { className: 'muted', text: t('expectedL') }), el('div', { className: 'big-amount', text: money(s.expected) }), actual.node, diffBox, note.node],
+      buttons: [
+        { label: t('confirm'), kind: 'btn-primary', onClick: function () {
+          if (actual.input.value.trim() === '') return;
+          var n = Number(actual.input.value.replace(/[^\d]/g, ''));
+          if (n !== s.expected && !note.input.value.trim()) { toast(errText('NOTE_REQUIRED')); return; }
+          return mutate('cashday.close', { date: s.date, expectedCash: s.expected, actualCash: n, note: note.input.value.trim() }).then(function () {
+            h.close(); toast('🔒 ' + t('dayClosedInfo')); return loadShift().then(loadCashDay);
+          }, function (e) {
+            if (!isAuthErr(e)) toast(errText(e.code));
+            if (e.code === 'DAY_CHANGED' || e.code === 'DAY_CLOSED') { h.close(); loadCashDay(); }
+            throw e;
+          });
+        } },
+        { label: t('cancel'), kind: 'btn-ghost' }
+      ]
+    });
+  }
+
   // ---------- Чеки ----------
   function salesDate() {
     if (state.salesDay === 'today' || !state.salesData) return undefined;
@@ -1147,22 +1444,68 @@
     st.appendChild(el('div', { className: 'stat big' }, [el('div', { className: 'k', text: t('total') }), el('div', { className: 'v', text: money(data.totals.total) })]));
     st.appendChild(el('div', { className: 'stat' }, [el('div', { className: 'k', text: '💵 ' + t('cash') }), el('div', { className: 'v', text: money(data.totals.cash) })]));
     st.appendChild(el('div', { className: 'stat' }, [el('div', { className: 'k', text: '📱 ' + t('qr') }), el('div', { className: 'v', text: money(data.totals.qr) })]));
-    st.appendChild(el('div', { className: 'stat big' }, [el('div', { className: 'k', text: t('count') }), el('div', { className: 'v', text: String(data.totals.count) })]));
+    st.appendChild(el('div', { className: 'stat' }, [el('div', { className: 'k', text: t('count') }), el('div', { className: 'v', text: String(data.totals.count) })]));
+    st.appendChild(el('div', { className: 'stat' }, [el('div', { className: 'k', text: '↩️ ' + t('voidedN') }), el('div', { className: 'v', text: String(data.totals.voided || 0) })]));
+    if (data.totals.refunds) {
+      st.appendChild(el('div', { className: 'stat' }, [el('div', { className: 'k', text: t('refunds') }), el('div', { className: 'v', text: '−' + money(data.totals.refunds) })]));
+      st.appendChild(el('div', { className: 'stat' }, [el('div', { className: 'k', text: t('netRevenue') }), el('div', { className: 'v', text: money(data.totals.net) })]));
+    }
     var list = $('salesList');
     list.textContent = '';
     if (!data.sales.length) { list.appendChild(el('p', { className: 'muted', text: t('noSales') })); return; }
     data.sales.forEach(function (s) {
+      var voided = s.status === 'voided';
       var meta = timeOf(s.createdAt) + (s.tableLabel ? ' · 🪑 ' + s.tableLabel : '') + (s.cashier ? ' · ' + s.cashier : '');
       var items = s.items.map(function (i) { return i.name + (i.variant ? ' (' + i.variant + ')' : '') + ' ×' + i.qty; }).join(', ');
-      list.appendChild(el('div', { className: 'card' }, [
+      var card = el('div', { className: 'card' + (voided ? ' voided-card' : '') }, [
         el('div', { className: 'rc-head' }, [
           el('span', { className: 'name', text: '#' + s.no }),
-          el('span', { className: 'pill ' + s.paymentMethod, text: t(s.paymentMethod) }),
+          el('span', { className: 'pill ' + (voided ? 'off' : s.paymentMethod), text: voided ? t('voidedOne') : t(s.paymentMethod) }),
           el('span', { className: 'amt', text: money(s.total) })
         ]),
         el('div', { className: 'meta', text: meta }),
-        el('div', { className: 'items-mini', text: items })
-      ]));
+        el('div', { className: 'items-mini', text: items }),
+        voided && s.voidReason ? el('div', { className: 'items-mini', text: '↩️ ' + s.voidReason }) : null,
+        s.refunded ? el('div', { className: 'items-mini', text: t('refunded') + ': ' + money(s.refunded) }) : null
+      ]);
+      var row = el('div', { className: 'row' });
+      if (s.canVoid) row.appendChild(el('button', { className: 'btn btn-small btn-danger', type: 'button', text: t('voidSale'), onclick: function (ev) { voidSaleFlow(s, ev.currentTarget); } }));
+      if (s.canRefund) row.appendChild(el('button', { className: 'btn btn-small', type: 'button', text: t('refundSale'), onclick: function () { refundFlow(s); } }));
+      if (row.childNodes.length) card.appendChild(row);
+      list.appendChild(card);
+    });
+  }
+
+  function voidSaleFlow(s, btn) {
+    promptBox(t('voidSale') + ' #' + s.no + ' · ' + money(s.total), t('voidReasonQ')).then(function (reason) {
+      if (!reason) return;
+      busy(btn, function () {
+        return mutate('sales.void', { saleId: s.saleId, reason: reason }).then(function () { toast(t('saved')); return loadSales(); });
+      });
+    });
+  }
+
+  function refundFlow(s) {
+    var left = s.total - (s.refunded || 0);
+    var amount = field(t('refundAmount'), String(left), 'text');
+    amount.input.setAttribute('inputmode', 'numeric');
+    var method = 'cash';
+    var methods = chipGroup(['cash', 'qr'], function (m) { return t(m); }, method, function (m) { method = m; });
+    var reason = field(t('voidReasonQ'), '');
+    var h = modal({
+      title: t('refundSale') + ' #' + s.no,
+      body: [el('p', { className: 'muted', text: t('refundHint') }), amount.node, methods, reason.node],
+      buttons: [
+        { label: t('confirm'), kind: 'btn-primary', onClick: function () {
+          var n = Number(amount.input.value.replace(/[^\d]/g, ''));
+          var r = reason.input.value.trim();
+          if (!n || !r) { toast(errText('BAD_REQUEST')); return; }
+          return mutate('sales.refund', { saleId: s.saleId, amount: n, method: method, reason: r }).then(function () {
+            h.close(); toast(t('saved')); return loadSales();
+          }, function (e) { if (!isAuthErr(e)) toast(errText(e.code)); throw e; });
+        } },
+        { label: t('cancel'), kind: 'btn-ghost' }
+      ]
     });
   }
 
@@ -1370,6 +1713,8 @@
     $('productsBtn').addEventListener('click', function () { var b = this; busy(b, function () { return loadAdminProducts().then(function () { setView('products'); }); }); });
     $('addProductBtn').addEventListener('click', function () { editProduct(null); });
     $('helpBtn').addEventListener('click', function () { setView('help'); });
+    $('cashDayBtn').addEventListener('click', function () { setView('cashday'); });
+    $('reloadCashDayBtn').addEventListener('click', function () { var b = this; busy(b, function () { return loadShift().then(loadCashDay); }); });
     $('segDash').addEventListener('click', function () { owner.tab = 'dash'; loadOwner(); });
     $('segExp').addEventListener('click', function () { owner.tab = 'exp'; loadOwner(); });
     $('logoutAllBtn').addEventListener('click', function () {
@@ -1384,7 +1729,7 @@
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'visible' && state.session) {
         refreshMe(true);
-        if (state.screen === 'app') loadProducts().catch(function () {});
+        if (state.screen === 'app') { loadProducts().catch(function () {}); loadShift().catch(function () {}); }
       }
     });
   }

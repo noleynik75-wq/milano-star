@@ -318,6 +318,21 @@ body.in-app main { padding-bottom: 260px; }
 .btn.sel { background: var(--brand); color: var(--brand-text); border-color: var(--brand); }
 .modal input[type=date].inp { padding: 0 8px; }
 
+/* ---------- Этап 4: смены и касса дня ---------- */
+.gate { gap: 12px; text-align: center; padding: 22px 16px; }
+.gate[hidden] { display: none; }
+.gate .big { font-size: 44px; }
+.gate .btn { min-height: 64px; font-size: 21px; }
+.calc { display: flex; flex-direction: column; gap: 6px; }
+.calc .ln { display: flex; justify-content: space-between; gap: 8px; font-size: 16px; }
+.calc .ln b { white-space: nowrap; }
+.calc .ln.total { border-top: 1px solid var(--border); padding-top: 8px; font-size: 19px; font-weight: 800; }
+.diff-ok { color: var(--ok); font-weight: 800; }
+.diff-bad { color: var(--danger); font-weight: 800; }
+.voided-card { opacity: .6; }
+.voided-card .amt { text-decoration: line-through; }
+.warn-box { background: var(--warn-bg); border-radius: 12px; padding: 10px 12px; font-size: 15px; }
+
 /* Модальные окна */
 .modal-back {
   position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.45);

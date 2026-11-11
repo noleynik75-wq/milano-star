@@ -66,6 +66,7 @@
     <section id="screen-app" class="screen app" hidden>
 
       <div id="view-sell" class="view">
+        <div id="shiftGate" class="card gate" hidden></div>
         <div id="catBar" class="cat-bar" role="tablist"></div>
         <div id="productGrid" class="grid"></div>
         <p id="noProducts" class="muted" hidden data-i18n="noProducts"></p>
@@ -88,6 +89,8 @@
       <div id="view-more" class="view" hidden>
         <h1 id="homeHello"></h1>
         <p class="role-chip" id="homeRole"></p>
+        <div id="shiftCard" class="card"></div>
+        <button id="cashDayBtn" class="btn btn-primary" type="button" hidden data-i18n="cashDayTitle"></button>
         <button id="helpBtn" class="btn btn-primary" type="button" data-i18n="helpTitle"></button>
         <button id="productsBtn" class="btn" type="button" hidden data-i18n="productsTitle"></button>
         <button id="usersBtn" class="btn" type="button" hidden data-i18n="usersTitle"></button>
@@ -105,6 +108,16 @@
           <button id="reloadUsersBtn" class="btn btn-small" type="button" data-i18n="refresh"></button>
         </div>
         <div id="usersList" class="list"></div>
+      </div>
+
+      <div id="view-cashday" class="view" hidden>
+        <button class="btn btn-ghost btn-small js-back-more" type="button" data-i18n="back"></button>
+        <div class="row-head">
+          <h1 data-i18n="cashDayTitle"></h1>
+          <button id="reloadCashDayBtn" class="btn btn-small" type="button" data-i18n="refresh"></button>
+        </div>
+        <div id="cashDayDates" class="cat-bar"></div>
+        <div id="cashDayBody" class="list"></div>
       </div>
 
       <div id="view-help" class="view" hidden>
