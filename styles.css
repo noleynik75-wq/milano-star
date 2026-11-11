@@ -95,6 +95,9 @@ p { margin: 0; }
 .btn-danger { color: var(--danger); border-color: var(--danger); background: transparent; }
 .btn-small { min-height: 44px; font-size: 16px; padding: 8px 14px; align-self: flex-start; }
 
+.link-btn { display: flex; align-items: center; justify-content: center; text-decoration: none; margin-top: 10px; width: 100%; }
+#inAppNote { display: flex; flex-direction: column; }
+#inAppNote[hidden] { display: none; }
 .gsi { min-height: 48px; display: flex; justify-content: flex-start; }
 .error { color: var(--danger); background: var(--danger-bg); padding: 12px; border-radius: 12px; }
 .result { padding: 12px; border-radius: 12px; background: var(--ok-bg); color: var(--ok); }

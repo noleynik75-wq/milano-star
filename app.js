@@ -60,7 +60,11 @@
       err_LAST_OWNER: 'Không thể khóa hoặc đổi vai trò chủ quán cuối cùng.',
       err_BUSY: 'Máy chủ đang bận. Thử lại sau vài giây.',
       err_NOT_CONFIGURED: 'Máy chủ chưa được cấu hình.',
-      err_generic: 'Có lỗi xảy ra. Thử lại.'
+      err_generic: 'Có lỗi xảy ra. Thử lại.',
+      inAppText: 'Bạn đang mở trang trong ứng dụng nhắn tin (Zalo, Messenger…). Đăng nhập Google không hoạt động ở đây. Hãy mở trang bằng Chrome hoặc Safari.',
+      openInChrome: 'Mở bằng Chrome',
+      copyLink: 'Sao chép liên kết',
+      linkCopied: 'Đã sao chép. Dán vào Chrome hoặc Safari.'
     },
     ru: {
       loading: 'Загрузка…',
@@ -115,7 +119,11 @@
       err_LAST_OWNER: 'Нельзя заблокировать или понизить последнего владельца.',
       err_BUSY: 'Сервер занят. Повторите через несколько секунд.',
       err_NOT_CONFIGURED: 'Сервер не настроен.',
-      err_generic: 'Произошла ошибка. Повторите.'
+      err_generic: 'Произошла ошибка. Повторите.',
+      inAppText: 'Страница открыта внутри мессенджера (Zalo, Messenger, Telegram…). Вход через Google здесь не работает. Откройте страницу в Chrome или Safari.',
+      openInChrome: 'Открыть в Chrome',
+      copyLink: 'Скопировать ссылку',
+      linkCopied: 'Ссылка скопирована. Вставьте её в Chrome или Safari.'
     }
   };
 
@@ -326,8 +334,29 @@
   }
 
   // ---------- Вход через Google ----------
+
+  /** Встроенный браузер мессенджера/соцсети: окно входа Google там не возвращает результат. */
+  function isInAppBrowser() {
+    var ua = navigator.userAgent || '';
+    return /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Messenger|Zalo|Line\/|MicroMessenger|TikTok|musical_ly|Telegram|; wv\)/i.test(ua);
+  }
+  function isAndroid() { return /Android/i.test(navigator.userAgent || ''); }
+
+  function renderInAppNote() {
+    var inApp = isInAppBrowser();
+    $('inAppNote').hidden = !inApp;
+    if (!inApp) return;
+    var btn = $('openBrowserBtn');
+    if (isAndroid()) {
+      var url = location.href.replace(/^https?:\/\//, '');
+      btn.href = 'intent://' + url + '#Intent;scheme=https;package=com.android.chrome;end';
+      btn.hidden = false;
+    }
+  }
+
   function showLogin() {
     show('login');
+    renderInAppNote();
     renderGsiButton();
   }
 
@@ -524,6 +553,15 @@
       busy(b, loadUsers);
     });
     $('backBtn').addEventListener('click', function () { show('home'); });
+    $('copyLinkBtn').addEventListener('click', function () {
+      var link = location.origin + location.pathname;
+      var done = function () { toast(t('linkCopied')); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(done, function () { window.prompt(t('copyLink'), link); });
+      } else {
+        window.prompt(t('copyLink'), link);
+      }
+    });
     $('logoutAllBtn').addEventListener('click', function () {
       var b = this;
       if (!window.confirm(t('confirmLogoutAll'))) return;
