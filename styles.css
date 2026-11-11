@@ -260,6 +260,14 @@ body.in-app main { padding-bottom: 260px; }
   background: var(--surface); color: var(--text); font-size: 16px; font-weight: 600;
 }
 .seg-btn.active { background: var(--brand); color: var(--brand-text); border-color: var(--brand); }
+#view-owner .seg { flex-wrap: wrap; }
+#view-owner .seg-btn { flex: 1 1 40%; }
+.lvl { font-size: 26px; font-weight: 800; }
+.lvl.bad { color: var(--danger); }
+.lvl.unknown { color: var(--muted); font-size: 18px; }
+.link-row { display: flex; align-items: center; gap: 8px; }
+.link-row label.check { flex: 1; }
+.link-row input.inp { width: 80px; flex: 0 0 80px; }
 
 .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; }

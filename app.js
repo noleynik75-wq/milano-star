@@ -274,7 +274,7 @@
       renderSell();
       renderCart();
       if (state.view === 'help') renderHelp();
-      if (state.view === 'owner') { renderPeriodBar(); if (owner.tab === 'dash' && owner.dash) renderDash(); if (owner.tab === 'exp' && owner.exp) renderExpenses(); if (owner.tab === 'bak' && owner.bak) renderBackups(); }
+      if (state.view === 'owner') { renderPeriodBar(); if (owner.tab === 'dash' && owner.dash) renderDash(); if (owner.tab === 'exp' && owner.exp) renderExpenses(); if (owner.tab === 'bak' && owner.bak) renderBackups(); if (owner.tab === 'stock' && owner.stock) renderStock(); }
       if (state.view === 'receipts' && state.salesData) renderSales();
       if (state.view === 'users' && state.usersData) renderUsers();
       if (state.view === 'products' && state.adminProducts) renderAdminProducts();
@@ -840,9 +840,11 @@
     $('dashBody').hidden = owner.tab !== 'dash';
     $('expBody').hidden = owner.tab !== 'exp';
     $('bakBody').hidden = owner.tab !== 'bak';
-    // У резервных копий нет периода.
-    bar.hidden = owner.tab === 'bak';
-    $('periodLine').hidden = owner.tab === 'bak';
+    $('stockBody').hidden = owner.tab !== 'stock';
+    $('segStock').classList.toggle('active', owner.tab === 'stock');
+    // У копий и склада нет периода.
+    bar.hidden = owner.tab === 'bak' || owner.tab === 'stock';
+    $('periodLine').hidden = bar.hidden;
   }
 
   function pickCustom() {
@@ -868,6 +870,8 @@
       ? api('dashboard.get', r).then(function (d) { owner.dash = d; renderDash(); })
       : owner.tab === 'bak'
         ? api('backups.list').then(function (d) { owner.bak = d; renderBackups(); })
+      : owner.tab === 'stock'
+        ? api('stock.list').then(function (d) { owner.stock = d; renderStock(); })
         : api('expenses.list', r).then(function (d) { owner.exp = d; renderExpenses(); });
     return req.then(renderPeriodBar).catch(function (e) { if (!isAuthErr(e)) toast(errText(e.code)); });
   }
@@ -973,6 +977,219 @@
     return card;
   }
 
+  // ---------- Склад ----------
+  var STK = {
+    vi: {
+      stockTitle: '📦 Kho', stockIntro: 'Tồn kho thuốc lá và nước đóng lon/chai. Bán hàng tự trừ kho; hủy hóa đơn tự cộng lại.',
+      stockAdd: '+ Mặt hàng kho', stockAutoDrinks: 'Tạo kho cho nước đóng lon/chai', stockNone: 'Chưa có mặt hàng kho.',
+      stockUnknown: 'Chưa kiểm kê — bấm "Kiểm kê" để nhập số tồn ban đầu', stockLow: 'Sắp hết', stockNeg: 'Âm — kiểm tra lại',
+      stockSince: 'Từ lần kiểm kê', stockRecv: 'Nhập', stockSold: 'Bán', stockWo: 'Hủy/hỏng',
+      stockReceive: '+ Nhập hàng', stockWriteoff: '− Hủy hàng', stockCount: '🔢 Kiểm kê', stockEdit: 'Sửa', stockHistory: 'Lịch sử',
+      stName: 'Tên mặt hàng kho', stBase: 'Đơn vị nhỏ nhất (điếu, lon…)', stPack: 'Số đơn vị trong 1 gói/thùng (để trống nếu không có)',
+      stPackUnit: 'Tên gói (gói, thùng…)', stLow: 'Báo sắp hết khi còn ≤', stLinks: 'Món bán trừ vào kho này (số đơn vị cho 1 lần bán)',
+      stQty: 'Số lượng', stPacks: 'Số gói', stSingles: 'Số lẻ', stAmount: 'Số tiền mua (để trống nếu chưa trả)',
+      stCountHint: 'Đếm thực tế trong kho và nhập. Số này sẽ là tồn kho hiện tại.', stReason: 'Lý do',
+      stHistoryTitle: 'Lịch sử', mv_count: 'Kiểm kê', mv_receipt: 'Nhập', mv_writeoff: 'Hủy', stVoid: 'Hủy dòng này', stSalesDays: 'Bán 14 ngày qua',
+      lowStockBanner: 'Hàng sắp hết:'
+    },
+    ru: {
+      stockTitle: '📦 Склад', stockIntro: 'Остатки сигарет и напитков в банках/бутылках. Продажи сами уменьшают остаток, отмена чека — возвращает.',
+      stockAdd: '+ Складская позиция', stockAutoDrinks: 'Создать позиции для напитков в банках', stockNone: 'Складских позиций пока нет.',
+      stockUnknown: 'Остаток неизвестен — сделайте «Пересчёт» и введите начальное количество', stockLow: 'Заканчивается', stockNeg: 'Ниже нуля — проверьте',
+      stockSince: 'С последнего пересчёта', stockRecv: 'Приход', stockSold: 'Продано', stockWo: 'Списано',
+      stockReceive: '+ Приход', stockWriteoff: '− Списание', stockCount: '🔢 Пересчёт', stockEdit: 'Изменить', stockHistory: 'История',
+      stName: 'Название позиции', stBase: 'Базовая единица (штука, банка…)', stPack: 'Сколько штук в пачке/упаковке (пусто — если упаковки нет)',
+      stPackUnit: 'Название упаковки (пачка, блок…)', stLow: 'Предупреждать, когда осталось ≤', stLinks: 'Какие товары списывают эту позицию (сколько единиц за 1 продажу)',
+      stQty: 'Количество', stPacks: 'Пачек', stSingles: 'Штук отдельно', stAmount: 'Сумма закупки (пусто — если не оплачивали)',
+      stCountHint: 'Пересчитайте фактическое количество и введите. Оно станет текущим остатком.', stReason: 'Причина',
+      stHistoryTitle: 'История', mv_count: 'Пересчёт', mv_receipt: 'Приход', mv_writeoff: 'Списание', stVoid: 'Отменить запись', stSalesDays: 'Продано за 14 дней',
+      lowStockBanner: 'Заканчивается:'
+    }
+  };
+  Object.keys(STK).forEach(function (l) { Object.keys(STK[l]).forEach(function (k) { I18N[l][k] = STK[l][k]; }); });
+
+  /** 65 штук при пачке 20 → «3 gói + 5 điếu (65)». */
+  function fmtStock(n, it) {
+    if (n === null || n === undefined) return '?';
+    if (it.packSize && Math.abs(n) >= it.packSize) {
+      var packs = Math.trunc(n / it.packSize), rest = n - packs * it.packSize;
+      return packs + ' ' + (it.packUnit || '') + (rest ? ' + ' + rest + ' ' + it.baseUnit : '') + ' (' + n + ')';
+    }
+    return n + ' ' + it.baseUnit;
+  }
+
+  function renderStock() {
+    var d = owner.stock;
+    var body = $('stockBody');
+    body.textContent = '';
+    body.appendChild(el('p', { className: 'note-sm', text: t('stockIntro') }));
+    var row = el('div', { className: 'row' }, [
+      el('button', { className: 'btn btn-primary', type: 'button', text: t('stockAdd'), onclick: function () { stockItemForm(null); } })
+    ]);
+    var unlinkedDrinks = d.products.some(function (p) { return /giải khát/i.test(p.category) && !p.stockItemId && p.active; });
+    if (unlinkedDrinks) {
+      row.appendChild(el('button', { className: 'btn', type: 'button', text: t('stockAutoDrinks'), onclick: function (ev) {
+        var b = ev.currentTarget;
+        busy(b, function () { return mutate('stock.autoDrinks', {}).then(function (r) { toast(t('saved') + ': ' + r.created.length); return loadOwner(); }); });
+      } }));
+    }
+    body.appendChild(row);
+    if (!d.items.length) { body.appendChild(el('p', { className: 'muted', text: t('stockNone') })); return; }
+    d.items.forEach(function (it) {
+      var cls = it.level === null ? 'lvl unknown' : (it.low || it.negative ? 'lvl bad' : 'lvl');
+      var card = el('div', { className: 'card' }, [
+        el('div', { className: 'rc-head' }, [
+          el('span', { className: 'name', text: it.name }),
+          it.negative ? el('span', { className: 'pill off', text: t('stockNeg') }) : it.low ? el('span', { className: 'pill draft', text: t('stockLow') }) : null
+        ]),
+        el('div', { className: cls, text: it.level === null ? t('stockUnknown') : fmtStock(it.level, it) }),
+        it.level !== null ? el('div', { className: 'items-mini', text: t('stockSince') + ' ' + dateTime(it.lastCountAt) + ': ' + fmtStock(it.lastCountQty, it) +
+          ' · ' + t('stockRecv') + ' +' + it.sinceCount.received + ' · ' + t('stockSold') + ' −' + it.sinceCount.sold + ' · ' + t('stockWo') + ' −' + it.sinceCount.writtenOff }) : null,
+        it.links.length ? el('div', { className: 'items-mini', text: it.links.map(function (l) { return l.name + ' ×' + l.factor; }).join(' · ') }) : null
+      ]);
+      card.appendChild(el('div', { className: 'row' }, [
+        el('button', { className: 'btn btn-small', type: 'button', text: t('stockReceive'), onclick: function () { stockQtyForm(it, 'receive'); } }),
+        el('button', { className: 'btn btn-small', type: 'button', text: t('stockWriteoff'), onclick: function () { stockQtyForm(it, 'writeoff'); } }),
+        el('button', { className: 'btn btn-small', type: 'button', text: t('stockCount'), onclick: function () { stockQtyForm(it, 'count'); } })
+      ]));
+      card.appendChild(el('div', { className: 'row' }, [
+        el('button', { className: 'btn btn-small btn-ghost', type: 'button', text: t('stockHistory'), onclick: function () { stockHistory(it); } }),
+        el('button', { className: 'btn btn-small btn-ghost', type: 'button', text: t('stockEdit'), onclick: function () { stockItemForm(it); } })
+      ]));
+      body.appendChild(card);
+    });
+  }
+
+  /** Поле количества: для позиций с пачкой — «пачек» + «штук отдельно». */
+  function qtyInputs(it) {
+    var a = field(it.packSize ? t('stPacks') + ' (' + (it.packUnit || '') + ' × ' + it.packSize + ')' : t('stQty') + ' (' + it.baseUnit + ')', '', 'text');
+    a.input.setAttribute('inputmode', 'numeric');
+    var b = it.packSize ? field(t('stSingles') + ' (' + it.baseUnit + ')', '', 'text') : null;
+    if (b) b.input.setAttribute('inputmode', 'numeric');
+    var total = el('div', { className: 'note-sm' });
+    var read = function () {
+      var x = Number(a.input.value.replace(/[^\d]/g, '')) || 0;
+      var y = b ? Number(b.input.value.replace(/[^\d]/g, '')) || 0 : 0;
+      return it.packSize ? x * it.packSize + y : x;
+    };
+    var upd = function () { total.textContent = (a.input.value || (b && b.input.value)) ? '= ' + read() + ' ' + it.baseUnit : ''; };
+    a.input.addEventListener('input', upd);
+    if (b) b.input.addEventListener('input', upd);
+    return { nodes: [a.node, b ? b.node : null, total], read: read, empty: function () { return !a.input.value && !(b && b.input.value); } };
+  }
+
+  function stockQtyForm(it, kind) {
+    var q = qtyInputs(it);
+    var extra = [];
+    var reason = field(t('stReason'), '');
+    var amount, supplier, paid = 'cash_register';
+    if (kind === 'receive') {
+      amount = field(t('stAmount'), '', 'text');
+      amount.input.setAttribute('inputmode', 'numeric');
+      supplier = field(t('supplier'), '');
+      extra = [amount.node, el('div', { className: 'k' }, [t('paidFrom')]),
+        chipGroup(['cash_register', 'bank', 'owner_personal'], function (p) { return t('pf_' + p); }, paid, function (p) { paid = p; }), supplier.node];
+    }
+    var title = kind === 'receive' ? t('stockReceive') : kind === 'writeoff' ? t('stockWriteoff') : t('stockCount');
+    var h = modal({
+      title: title + ' · ' + it.name,
+      body: [kind === 'count' ? el('p', { className: 'muted', text: t('stCountHint') }) : null].concat(q.nodes, extra, kind !== 'count' ? [reason.node] : []),
+      buttons: [
+        { label: t('confirm'), kind: 'btn-primary', onClick: function () {
+          if (q.empty()) return;
+          var n = q.read();
+          var payload = { stockItemId: it.stockItemId, qty: n };
+          var action = kind === 'receive' ? 'stock.receive' : kind === 'writeoff' ? 'stock.writeoff' : 'stock.count';
+          if (kind !== 'count') payload.reason = reason.input.value.trim();
+          if (kind === 'writeoff' && !payload.reason) { toast(t('stReason')); return; }
+          if (kind === 'receive') {
+            var amt = Number(amount.input.value.replace(/[^\d]/g, ''));
+            if (amt) { payload.amount = amt; payload.paidFrom = paid; payload.supplier = supplier.input.value.trim(); payload.category = /thuốc|điếu|gói/i.test(it.name + it.baseUnit) ? 'cigarettes' : 'drinks'; }
+          }
+          return mutate(action, payload).then(function () { h.close(); toast(t('saved')); return loadOwner(); },
+            function (e) { if (!isAuthErr(e)) toast(errText(e.code)); throw e; });
+        } },
+        { label: t('cancel'), kind: 'btn-ghost' }
+      ]
+    });
+  }
+
+  function stockItemForm(it) {
+    var isNew = !it;
+    it = it || { name: '', baseUnit: '', packSize: null, packUnit: '', lowLevel: 0, links: [] };
+    var f = {
+      name: field(t('stName'), it.name), base: field(t('stBase'), it.baseUnit), pack: field(t('stPack'), it.packSize || '', 'text'),
+      packUnit: field(t('stPackUnit'), it.packUnit || ''), low: field(t('stLow'), it.lowLevel || '', 'text')
+    };
+    f.pack.input.setAttribute('inputmode', 'numeric');
+    f.low.input.setAttribute('inputmode', 'numeric');
+    var linked = {};
+    it.links.forEach(function (l) { linked[l.productId] = l.factor; });
+    var linkBox = el('div', { className: 'list' });
+    var rows = [];
+    owner.stock.products
+      .filter(function (p) { return !p.stockItemId || p.stockItemId === it.stockItemId; })
+      .sort(function (a, b) { return (/thuốc|giải khát/i.test(b.category) ? 1 : 0) - (/thuốc|giải khát/i.test(a.category) ? 1 : 0); })
+      .forEach(function (p) {
+        var c = check(p.name, linked[p.productId] !== undefined);
+        var factor = el('input', { className: 'inp', type: 'text', inputmode: 'numeric' });
+        factor.value = linked[p.productId] || (/gói/i.test(p.name) && it.packSize ? it.packSize : 1);
+        rows.push({ p: p, c: c.input, factor: factor });
+        linkBox.appendChild(el('div', { className: 'link-row' }, [c.node, el('span', { text: '×' }), factor]));
+      });
+    var h = modal({
+      title: isNew ? t('stockAdd') : t('stockEdit') + ' · ' + it.name,
+      body: [f.name.node, f.base.node, f.pack.node, f.packUnit.node, f.low.node, el('div', { className: 'k', text: t('stLinks') }), linkBox],
+      buttons: [
+        { label: t('save'), kind: 'btn-primary', onClick: function () {
+          var pack = f.pack.input.value.replace(/[^\d]/g, '');
+          var payload = {
+            name: f.name.input.value.trim(), baseUnit: f.base.input.value.trim(),
+            packSize: pack ? Number(pack) : null, packUnit: f.packUnit.input.value.trim(),
+            lowLevel: Number(f.low.input.value.replace(/[^\d]/g, '')) || 0,
+            links: rows.filter(function (r) { return r.c.checked; }).map(function (r) { return { productId: r.p.productId, factor: Number(r.factor.value.replace(/[^\d]/g, '')) || 0 }; })
+          };
+          if (!isNew) payload.stockItemId = it.stockItemId;
+          if (!payload.name || !payload.baseUnit) { toast(errText('BAD_REQUEST')); return; }
+          return mutate('stock.saveItem', payload).then(function () { h.close(); toast(t('saved')); return loadOwner(); },
+            function (e) { if (!isAuthErr(e)) toast(errText(e.code)); throw e; });
+        } },
+        { label: t('cancel'), kind: 'btn-ghost' }
+      ]
+    });
+  }
+
+  function stockHistory(it) {
+    api('stock.history', { stockItemId: it.stockItemId }).then(function (d) {
+      var list = el('div', { className: 'list' });
+      d.movements.forEach(function (m) {
+        var voided = m.status === 'voided';
+        var line = el('div', { className: 'card' + (voided ? ' voided-card' : '') }, [
+          el('div', { className: 'rc-head' }, [
+            el('span', { className: 'name', text: t('mv_' + m.type) }),
+            el('span', { className: 'amt', text: (m.type === 'writeoff' ? '−' : m.type === 'receipt' ? '+' : '= ') + fmtStock(m.qty, it) })
+          ]),
+          el('div', { className: 'items-mini', text: dateTime(m.at) + ' · ' + m.by + (m.reason ? ' · ' + m.reason : '') + (voided && m.voidReason ? ' · ↩️ ' + m.voidReason : '') })
+        ]);
+        if (!voided) {
+          line.appendChild(el('button', { className: 'btn btn-small btn-ghost', type: 'button', text: '↩️ ' + t('stVoid'), onclick: function (ev) {
+            var b = ev.currentTarget;
+            promptBox(t('stVoid'), t('stReason')).then(function (r) {
+              if (r) busy(b, function () { return mutate('stock.voidMovement', { movementId: m.movementId, reason: r }).then(function () { h.close(); toast(t('saved')); return loadOwner(); }); });
+            });
+          } }));
+        }
+        list.appendChild(line);
+      });
+      var sales = d.salesByDay.length ? d.salesByDay.map(function (x) { return shortDate(x.date) + ': ' + x.qty; }).join(' · ') : t('noData');
+      var h = modal({
+        title: t('stHistoryTitle') + ' · ' + it.name,
+        body: [el('p', { className: 'items-mini', text: t('stSalesDays') + ': ' + sales }), list],
+        buttons: [{ label: t('ok'), kind: 'btn-primary' }]
+      });
+    }).catch(function (e) { if (!isAuthErr(e)) toast(errText(e.code)); });
+  }
+
   // ---------- Резервные копии ----------
   var BK = {
     vi: {
@@ -1048,6 +1265,11 @@
     if (d.backup && d.backup.problem) {
       body.appendChild(el('button', { className: 'warn-box', type: 'button', style: 'text-align:left;border:0;width:100%', text: '⚠️ ' + t('bakBanner'),
         onclick: function () { owner.tab = 'bak'; loadOwner(); } }));
+    }
+    if (d.lowStock && d.lowStock.length) {
+      body.appendChild(el('button', { className: 'warn-box', type: 'button', style: 'text-align:left;border:0;width:100%',
+        text: '📦 ' + t('lowStockBanner') + ' ' + d.lowStock.map(function (x) { return x.name + ' (' + x.level + ' ' + x.unit + ')'; }).join(', '),
+        onclick: function () { owner.tab = 'stock'; loadOwner(); } }));
     }
 
     var k = el('div', { className: 'kpis' });
@@ -1796,6 +2018,7 @@
     $('segDash').addEventListener('click', function () { owner.tab = 'dash'; loadOwner(); });
     $('segExp').addEventListener('click', function () { owner.tab = 'exp'; loadOwner(); });
     $('segBak').addEventListener('click', function () { owner.tab = 'bak'; loadOwner(); });
+    $('segStock').addEventListener('click', function () { owner.tab = 'stock'; loadOwner(); });
     $('logoutAllBtn').addEventListener('click', function () {
       var b = this;
       confirmBox(t('confirmLogoutAll')).then(function (ok) {
