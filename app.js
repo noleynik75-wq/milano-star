@@ -251,11 +251,11 @@
   function setView(name) {
     state.view = name;
     document.querySelectorAll('#screen-app .view').forEach(function (v) { v.hidden = v.id !== 'view-' + name; });
-    var tabName = ['users', 'products', 'help', 'owner'].indexOf(name) >= 0 ? 'more' : name;
+    var tabName = ['users', 'products', 'help'].indexOf(name) >= 0 ? 'more' : name;
     document.querySelectorAll('.tab').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-view') === tabName); });
     if (name === 'receipts') loadSales().catch(function () {});
     if (name === 'help') renderHelp();
-    if (name === 'owner') renderOwner();
+    if (name === 'owner') loadOwner();
     if (name === 'sell') renderSell();
     renderCart();
     window.scrollTo(0, 0);
@@ -272,7 +272,7 @@
       renderSell();
       renderCart();
       if (state.view === 'help') renderHelp();
-      if (state.view === 'owner') renderOwner();
+      if (state.view === 'owner') { renderPeriodBar(); if (owner.tab === 'dash' && owner.dash) renderDash(); if (owner.tab === 'exp' && owner.exp) renderExpenses(); }
       if (state.view === 'receipts' && state.salesData) renderSales();
       if (state.view === 'users' && state.usersData) renderUsers();
       if (state.view === 'products' && state.adminProducts) renderAdminProducts();
@@ -293,7 +293,7 @@
     $('whoTop').textContent = u.status === 'active' ? (u.name || '') : '';
     $('usersBtn').hidden = !isAdmin();
     $('productsBtn').hidden = !isAdmin();
-    $('ownerBtn').hidden = !isAdmin();
+    $('ownerTab').hidden = !isAdmin();
     $('pendingWho').textContent = u.email;
   }
 
@@ -735,28 +735,385 @@
     });
   }
 
-  // ---------- Раздел владельца ----------
-  /** Что уже есть и что появится (этапы ТЗ). Кнопки ведут в готовые разделы. */
-  function renderOwner() {
-    var body = $('ownerBody');
-    body.textContent = '';
+  // ---------- Раздел владельца: дашборд и расходы ----------
+  var OWN = {
+    vi: {
+      tabOwner: 'Chủ quán', dashboard: '📈 Báo cáo', expensesTitle: '💸 Chi phí',
+      p_today: 'Hôm nay', p_yesterday: 'Hôm qua', p_7d: '7 ngày', p_month: 'Tháng này', p_prevMonth: 'Tháng trước', p_custom: 'Chọn ngày…',
+      from: 'Từ ngày', to: 'Đến ngày', updated: 'Cập nhật',
+      revenue: 'Doanh thu', checks: 'Số hóa đơn', avgCheck: 'Trung bình / hóa đơn', noData: 'chưa có dữ liệu',
+      purchases: 'Nhập hàng', opex: 'Chi phí', cashResult: 'Tiền còn lại (thu − nhập − chi)', notProfit: 'chưa phải lợi nhuận: chưa có giá vốn',
+      byDay: 'Doanh thu theo ngày', byHour: 'Doanh thu theo giờ', topProducts: 'Món bán chạy', byCategory: 'Theo nhóm món',
+      spendByCat: 'Chi tiêu theo loại', byCashier: 'Theo nhân viên', tapHint: 'Chạm vào cột để xem số liệu',
+      payback: 'Hoàn vốn', lifeRevenue: 'Tổng doanh thu', lifeSpend: 'Tổng nhập hàng + chi phí', lifeResult: 'Tiền còn lại', investments: 'Vốn đầu tư',
+      withdrawals: 'Chủ quán rút', paybackNone: 'Chưa đủ dữ liệu: hãy nhập vốn đầu tư (loại "Đầu tư").',
+      profitNote: 'Lợi nhuận và ROI chính xác sẽ có khi nhập giá vốn (công thức món). Hiện tại chỉ tính dòng tiền.',
+      noExpensesYet: 'Chưa nhập chi phí nào — kết quả chỉ là doanh thu.',
+      addExpense: '+ Nhập chi phí', kind: 'Loại', amount: 'Số tiền (VND)', date: 'Ngày', paidFrom: 'Trả từ', supplier: 'Nhà cung cấp / người nhận',
+      noteReq: 'Ghi chú (bắt buộc với "Khác")', noExpenses: 'Không có khoản chi nào trong thời gian này.', voidQ: 'Hủy khoản này?',
+      voidReason: 'Lý do hủy', voided: 'Đã hủy', total: 'Tổng',
+      k_purchase: 'Nhập hàng', k_expense: 'Chi phí', k_investment: 'Đầu tư', k_withdrawal: 'Chủ rút tiền',
+      c_coffee: 'Cà phê', c_milk: 'Sữa', c_sugar_syrup: 'Đường, siro', c_fruit: 'Trái cây', c_drinks: 'Nước đóng chai/lon', c_cigarettes: 'Thuốc lá',
+      c_ice: 'Đá', c_cups: 'Ly, ống hút, túi', c_other: 'Khác', c_rent: 'Thuê mặt bằng', c_electricity: 'Điện', c_water: 'Nước', c_internet: 'Internet',
+      c_salary: 'Lương', c_repair: 'Sửa chữa', c_cleaning: 'Vệ sinh', c_equipment: 'Thiết bị', c_renovation: 'Sửa sang quán', c_furniture: 'Bàn ghế',
+      c_deposit: 'Tiền cọc', c_owner: 'Chủ quán rút',
+      pf_cash_register: 'Tiền quầy', pf_bank: 'Ngân hàng', pf_owner_personal: 'Tiền riêng chủ quán'
+    },
+    ru: {
+      tabOwner: 'Владелец', dashboard: '📈 Дашборд', expensesTitle: '💸 Расходы',
+      p_today: 'Сегодня', p_yesterday: 'Вчера', p_7d: '7 дней', p_month: 'Этот месяц', p_prevMonth: 'Прошлый месяц', p_custom: 'Период…',
+      from: 'С', to: 'По', updated: 'Обновлено',
+      revenue: 'Выручка', checks: 'Чеков', avgCheck: 'Средний чек', noData: 'нет данных',
+      purchases: 'Закупки', opex: 'Расходы', cashResult: 'Денежный результат (выручка − закупки − расходы)', notProfit: 'это ещё не прибыль: нет себестоимости',
+      byDay: 'Выручка по дням', byHour: 'Выручка по часам', topProducts: 'Популярные товары', byCategory: 'По категориям',
+      spendByCat: 'Траты по статьям', byCashier: 'По сотрудникам', tapHint: 'Нажмите на столбец, чтобы увидеть цифры',
+      payback: 'Окупаемость', lifeRevenue: 'Выручка за всё время', lifeSpend: 'Закупки + расходы за всё время', lifeResult: 'Денежный результат', investments: 'Вложения',
+      withdrawals: 'Изъято владельцем', paybackNone: 'Недостаточно данных: внесите вложения (вид «Вложение»).',
+      profitNote: 'Точная прибыль и ROI появятся после ввода себестоимости (рецептур). Сейчас считается движение денег.',
+      noExpensesYet: 'Расходы ещё не вносились — результат равен выручке.',
+      addExpense: '+ Внести расход', kind: 'Вид', amount: 'Сумма (VND)', date: 'Дата', paidFrom: 'Откуда деньги', supplier: 'Поставщик / получатель',
+      noteReq: 'Примечание (обязательно для «Другое»)', noExpenses: 'За этот период записей нет.', voidQ: 'Отменить эту запись?',
+      voidReason: 'Причина отмены', voided: 'Отменено', total: 'Итого',
+      k_purchase: 'Закупка', k_expense: 'Расход', k_investment: 'Вложение', k_withdrawal: 'Изъятие владельцем',
+      c_coffee: 'Кофе', c_milk: 'Молоко', c_sugar_syrup: 'Сахар, сиропы', c_fruit: 'Фрукты', c_drinks: 'Напитки в банках/бутылках', c_cigarettes: 'Сигареты',
+      c_ice: 'Лёд', c_cups: 'Стаканы, трубочки, пакеты', c_other: 'Другое', c_rent: 'Аренда', c_electricity: 'Электричество', c_water: 'Вода', c_internet: 'Интернет',
+      c_salary: 'Зарплата', c_repair: 'Ремонт', c_cleaning: 'Уборка', c_equipment: 'Оборудование', c_renovation: 'Ремонт помещения', c_furniture: 'Мебель',
+      c_deposit: 'Депозит', c_owner: 'Изъятие владельцем',
+      pf_cash_register: 'Из кассы', pf_bank: 'Банк', pf_owner_personal: 'Личные деньги владельца'
+    }
+  };
+  Object.keys(OWN).forEach(function (l) { Object.keys(OWN[l]).forEach(function (k) { I18N[l][k] = OWN[l][k]; }); });
+
+  var KINDS = {
+    purchase: ['coffee', 'milk', 'sugar_syrup', 'fruit', 'drinks', 'cigarettes', 'ice', 'cups', 'other'],
+    expense: ['rent', 'electricity', 'water', 'internet', 'salary', 'repair', 'cleaning', 'other'],
+    investment: ['equipment', 'renovation', 'furniture', 'deposit', 'other'],
+    withdrawal: ['owner']
+  };
+  var PERIODS = ['today', 'yesterday', '7d', 'month', 'prevMonth', 'custom'];
+  var owner = { tab: 'dash', period: 'month', from: null, to: null, dash: null, exp: null };
+
+  function todayVN() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date()); }
+  function shiftDay(s, n) { var d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function shortDate(s) { return s.slice(8, 10) + '.' + s.slice(5, 7); }
+
+  function periodRange() {
+    var td = todayVN();
+    switch (owner.period) {
+      case 'today': return { from: td, to: td };
+      case 'yesterday': var y = shiftDay(td, -1); return { from: y, to: y };
+      case '7d': return { from: shiftDay(td, -6), to: td };
+      case 'month': return { from: td.slice(0, 8) + '01', to: td };
+      case 'prevMonth':
+        var first = td.slice(0, 8) + '01';
+        var lastPrev = shiftDay(first, -1);
+        return { from: lastPrev.slice(0, 8) + '01', to: lastPrev };
+      default: return { from: owner.from || td, to: owner.to || td };
+    }
+  }
+
+  function renderPeriodBar() {
+    var bar = $('periodBar');
+    bar.textContent = '';
+    PERIODS.forEach(function (p) {
+      bar.appendChild(el('button', {
+        className: 'cat' + (p === owner.period ? ' active' : ''), type: 'button', text: t('p_' + p),
+        onclick: function () { if (p === 'custom') return pickCustom(); owner.period = p; loadOwner(); }
+      }));
+    });
+    var r = periodRange();
+    $('periodLine').textContent = (r.from === r.to ? r.from : r.from + ' → ' + r.to) +
+      (owner.tab === 'dash' && owner.dash ? ' · ' + t('updated') + ' ' + timeOf(owner.dash.generatedAt) : '');
+    $('segDash').classList.toggle('active', owner.tab === 'dash');
+    $('segExp').classList.toggle('active', owner.tab === 'exp');
+    $('dashBody').hidden = owner.tab !== 'dash';
+    $('expBody').hidden = owner.tab !== 'exp';
+  }
+
+  function pickCustom() {
+    var r = periodRange();
+    var f = field(t('from'), r.from, 'date');
+    var to = field(t('to'), r.to, 'date');
+    var h = modal({
+      title: t('p_custom'), body: [f.node, to.node],
+      buttons: [
+        { label: t('ok'), kind: 'btn-primary', onClick: function () {
+          if (!f.input.value || !to.input.value || f.input.value > to.input.value) return;
+          owner.period = 'custom'; owner.from = f.input.value; owner.to = to.input.value; h.close(); loadOwner();
+        } },
+        { label: t('cancel'), kind: 'btn-ghost' }
+      ]
+    });
+  }
+
+  function loadOwner() {
+    renderPeriodBar();
+    var r = periodRange();
+    var req = owner.tab === 'dash'
+      ? api('dashboard.get', r).then(function (d) { owner.dash = d; renderDash(); })
+      : api('expenses.list', r).then(function (d) { owner.exp = d; renderExpenses(); });
+    return req.then(renderPeriodBar).catch(function (e) { if (!isAuthErr(e)) toast(errText(e.code)); });
+  }
+
+  function kpi(label, value, sub, hero) {
+    return el('div', { className: 'kpi' + (hero ? ' hero' : '') }, [
+      el('div', { className: 'k', text: label }), el('div', { className: 'v', text: value }), sub ? el('div', { className: 's', text: sub }) : null
+    ]);
+  }
+
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs) {
+    var n = document.createElementNS(SVGNS, tag);
+    Object.keys(attrs || {}).forEach(function (k) { n.setAttribute(k, attrs[k]); });
+    return n;
+  }
+  /** Прямоугольник со скруглёнными только верхними углами (r ≤ 4). */
+  function topRounded(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h);
+    return 'M' + x + ',' + (y + h) + 'V' + (y + r) + 'Q' + x + ',' + y + ' ' + (x + r) + ',' + y +
+      'H' + (x + w - r) + 'Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + r) + 'V' + (y + h) + 'Z';
+  }
+  function compact(n) {
     var ru = state.lang === 'ru';
-    var items = [
-      { ok: true, title: ru ? '🧾 Выручка за день' : '🧾 Doanh thu trong ngày', text: ru ? 'Все чеки, итог, наличные и QR отдельно.' : 'Tất cả hóa đơn, tổng, tiền mặt và QR.', go: function () { setView('receipts'); } },
-      { ok: true, title: ru ? '🏷️ Товары и цены' : '🏷️ Sản phẩm & giá', text: ru ? 'Изменить цену, включить или выключить товар, добавить новый.' : 'Sửa giá, bật/tắt, thêm món mới.', go: function () { $('productsBtn').click(); } },
-      { ok: true, title: ru ? '👥 Сотрудники' : '👥 Nhân viên', text: ru ? 'Одобрение, роли, блокировка, выход на всех устройствах.' : 'Duyệt, vai trò, khóa.', go: function () { $('usersBtn').click(); } },
-      { ok: false, title: ru ? '↩️ Отмены, смены, закрытие дня' : '↩️ Hủy hóa đơn, ca, đóng ngày', text: ru ? 'Отмена чека с причиной, начальная наличность, сверка кассы, расхождения.' : 'Hủy hóa đơn, tiền đầu ca, đối chiếu tiền mặt.' },
-      { ok: false, title: ru ? '💸 Закупки и расходы' : '💸 Nhập hàng & chi phí', text: ru ? 'Закупки у поставщиков, расходы (аренда, свет…), вложения, остатки сигарет и банок.' : 'Nhập hàng, chi phí, vốn đầu tư, tồn kho.' },
-      { ok: false, title: ru ? '🧮 Себестоимость' : '🧮 Giá vốn', text: ru ? 'Рецептуры напитков и себестоимость — для расчёта прибыли.' : 'Công thức và giá vốn để tính lãi.' },
-      { ok: false, title: ru ? '📈 Дашборд: прибыль, ROI, графики' : '📈 Báo cáo: lãi, ROI, biểu đồ', text: ru ? 'Продажи по дням, популярные товары, расходы, прибыль и окупаемость — когда будут данные о расходах и вложениях.' : 'Doanh thu theo ngày, món bán chạy, chi phí, lãi.' }
-    ];
-    items.forEach(function (it) {
-      var card = el('div', { className: 'card' }, [
-        el('div', { className: 'rc-head' }, [el('span', { className: 'name', text: it.title }), el('span', { className: 'pill ' + (it.ok ? 'cash' : 'draft'), text: it.ok ? t('available') : t('soon') })]),
-        el('div', { className: 'items-mini', text: it.text })
+    if (n >= 1e6) return (Math.round(n / 1e5) / 10) + (ru ? ' млн' : 'tr');
+    if (n >= 1e3) return Math.round(n / 1e3) + (ru ? ' тыс' : 'k');
+    return String(n);
+  }
+
+  /**
+   * Столбчатая диаграмма. series: [{key, color}] — сегменты снизу вверх.
+   * rows: [{label, values:{key:n}, detail}] ; нажатие на столбец показывает detail.
+   */
+  function barChart(title, series, rows, legend) {
+    var card = el('div', { className: 'chart-card' }, [el('h3', { text: title })]);
+    if (legend) {
+      card.appendChild(el('div', { className: 'legend' }, legend.map(function (l) {
+        return el('span', {}, [el('i', { style: 'background:' + l.color }), l.label]);
+      })));
+    }
+    var W = 340, H = 170, padL = 4, padB = 22, padT = 18;
+    var n = rows.length || 1;
+    var slot = (W - padL) / n;
+    var bw = Math.max(2, Math.min(28, slot - 3));
+    var max = Math.max.apply(null, rows.map(function (r) { return series.reduce(function (s, se) { return s + (r.values[se.key] || 0); }, 0); }).concat([1]));
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': title });
+    svg.appendChild(svgEl('line', { x1: 0, x2: W, y1: H - padB + 0.5, y2: H - padB + 0.5, stroke: 'var(--grid)', 'stroke-width': 1 }));
+    var maxLbl = svgEl('text', { x: W, y: 11, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--muted)' });
+    maxLbl.textContent = compact(max);
+    svg.appendChild(maxLbl);
+    var detail = el('div', { className: 'detail muted', text: t('tapHint') });
+    var plotH = H - padB - padT;
+    var selected = null;
+    rows.forEach(function (r, i) {
+      var x = padL + i * slot + (slot - bw) / 2;
+      var y = H - padB;
+      var g = svgEl('g', {});
+      var drawn = series.filter(function (se) { return (r.values[se.key] || 0) > 0; });
+      drawn.forEach(function (se, j) {
+        var h = (r.values[se.key] / max) * plotH;
+        var gap = j > 0 ? 2 : 0;
+        var top = j === drawn.length - 1;
+        var hh = Math.max(1, h - gap);
+        y -= h;
+        g.appendChild(top
+          ? svgEl('path', { d: topRounded(x, y, bw, hh, 4), fill: se.color })
+          : svgEl('rect', { x: x, y: y + gap, width: bw, height: hh, fill: se.color }));
+      });
+      // Зона нажатия больше столбца
+      var hit = svgEl('rect', { x: padL + i * slot, y: 0, width: slot, height: H - padB, fill: 'transparent', style: 'cursor:pointer' });
+      var pick = function () {
+        // Выбранный столбец остаётся ярким, остальные приглушаются.
+        Array.prototype.forEach.call(svg.querySelectorAll('g'), function (x) { x.setAttribute('opacity', x === g ? '1' : '0.45'); });
+        detail.textContent = r.detail;
+        detail.classList.remove('muted');
+        selected = g;
+      };
+      hit.addEventListener('click', pick);
+      hit.addEventListener('mouseenter', pick);
+      g.appendChild(hit);
+      svg.appendChild(g);
+      if (r.showLabel) {
+        var tx = svgEl('text', { x: x + bw / 2, y: H - 6, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--muted)' });
+        tx.textContent = r.label;
+        svg.appendChild(tx);
+      }
+    });
+    card.appendChild(svg);
+    card.appendChild(detail);
+    return card;
+  }
+
+  function hbars(title, rows, color) {
+    var card = el('div', { className: 'chart-card' }, [el('h3', { text: title })]);
+    var max = Math.max.apply(null, rows.map(function (r) { return r.value; }).concat([1]));
+    rows.forEach(function (r) {
+      card.appendChild(el('div', { className: 'hbar' }, [
+        el('div', { className: 'lbl' }, [el('span', { text: r.label }), el('b', { text: r.text })]),
+        el('div', { className: 'track' }, [el('div', { className: 'fill', style: 'width:' + Math.max(1, r.value / max * 100) + '%;background:' + color })])
+      ]));
+    });
+    if (!rows.length) card.appendChild(el('p', { className: 'muted', text: t('noData') }));
+    return card;
+  }
+
+  function renderDash() {
+    var d = owner.dash;
+    var body = $('dashBody');
+    body.textContent = '';
+    var C1 = 'var(--series-1)', C2 = 'var(--series-2)', C3 = 'var(--series-3)';
+
+    var k = el('div', { className: 'kpis' });
+    k.appendChild(kpi(t('revenue'), money(d.revenue.total), '💵 ' + money(d.revenue.cash) + ' · 📱 ' + money(d.revenue.qr), true));
+    k.appendChild(kpi(t('checks'), String(d.revenue.count)));
+    k.appendChild(kpi(t('avgCheck'), d.revenue.avg === null ? t('noData') : money(d.revenue.avg)));
+    k.appendChild(kpi(t('purchases'), money(d.spend.purchase)));
+    k.appendChild(kpi(t('opex'), money(d.spend.expense)));
+    k.appendChild(kpi(t('cashResult'), money(d.cashResult), d.dataQuality.expensesEntered ? t('notProfit') : t('noExpensesYet'), true));
+    body.appendChild(k);
+
+    var cashLbl = t('cash'), qrLbl = t('qr');
+    if (d.days.length > 1) {
+      var every = Math.ceil(d.days.length / 6);
+      body.appendChild(barChart(t('byDay'), [{ key: 'cash', color: C1 }, { key: 'qr', color: C2 }], d.days.map(function (x, i) {
+        return {
+          label: shortDate(x.date), showLabel: i % every === 0 || i === d.days.length - 1,
+          values: { cash: x.cash, qr: x.qr },
+          detail: shortDate(x.date) + ': ' + money(x.cash + x.qr) + ' · 💵 ' + money(x.cash) + ' · 📱 ' + money(x.qr) + ' · ' + x.count + ' ' + t('checks').toLowerCase()
+        };
+      }), [{ color: C1, label: cashLbl }, { color: C2, label: qrLbl }]));
+    }
+
+    var hrs = d.hours.filter(function (h) { return h.count > 0; });
+    if (hrs.length) {
+      var h0 = Math.max(0, hrs[0].hour - 1), h1 = Math.min(23, hrs[hrs.length - 1].hour + 1);
+      var range = d.hours.slice(h0, h1 + 1);
+      var everyH = Math.ceil(range.length / 8);
+      body.appendChild(barChart(t('byHour'), [{ key: 'v', color: C1 }], range.map(function (h, i) {
+        return { label: h.hour + 'h', showLabel: i % everyH === 0, values: { v: h.total }, detail: h.hour + ':00–' + h.hour + ':59 · ' + money(h.total) + ' · ' + h.count + ' ' + t('checks').toLowerCase() };
+      })));
+    }
+
+    body.appendChild(hbars(t('topProducts'), d.topProducts.map(function (p) {
+      return { label: p.name + ' ×' + p.qty, value: p.total, text: money(p.total) };
+    }), C1));
+    body.appendChild(hbars(t('byCategory'), d.categories.map(function (c) {
+      return { label: c.category + ' ×' + c.qty, value: c.total, text: money(c.total) };
+    }), C1));
+    var spendRows = d.spendCategories.filter(function (s) { return s.kind === 'purchase' || s.kind === 'expense'; });
+    body.appendChild(hbars(t('spendByCat'), spendRows.map(function (s) {
+      return { label: t('k_' + s.kind) + ': ' + t('c_' + s.category), value: s.total, text: money(s.total) };
+    }), C3));
+    if (d.cashiers.length) {
+      body.appendChild(hbars(t('byCashier'), d.cashiers.map(function (c) {
+        return { label: c.name + ' · ' + c.count, value: c.total, text: money(c.total) };
+      }), C1));
+    }
+
+    var L = d.lifetime;
+    var pb = el('div', { className: 'chart-card' }, [el('h3', { text: '🎯 ' + t('payback') })]);
+    [[t('lifeRevenue'), L.revenue], [t('lifeSpend'), L.purchase + L.expense], [t('lifeResult'), L.result], [t('investments'), L.investment], [t('withdrawals'), L.withdrawal]]
+      .forEach(function (r) { pb.appendChild(el('div', { className: 'hbar' }, [el('div', { className: 'lbl' }, [el('span', { text: r[0] }), el('b', { text: money(r[1]) })])])); });
+    if (L.payback === null) {
+      pb.appendChild(el('p', { className: 'note-sm', text: t('paybackNone') }));
+    } else {
+      var pct = Math.max(0, Math.min(100, L.payback));
+      pb.appendChild(el('div', { className: 'kpi hero' }, [el('div', { className: 'k', text: t('payback') }), el('div', { className: 'v', text: L.payback + '%' })]));
+      pb.appendChild(el('div', { className: 'track', style: 'background:var(--grid);border-radius:4px;height:10px' }, [el('div', { className: 'fill', style: 'width:' + pct + '%;background:var(--series-1);height:10px;border-radius:0 4px 4px 0' })]));
+    }
+    pb.appendChild(el('p', { className: 'note-sm', text: t('profitNote') }));
+    body.appendChild(pb);
+  }
+
+  function renderExpenses() {
+    var d = owner.exp;
+    var body = $('expBody');
+    body.textContent = '';
+    body.appendChild(el('button', { className: 'btn btn-primary', type: 'button', text: t('addExpense'), onclick: function () { expenseForm(); } }));
+    var k = el('div', { className: 'kpis' });
+    ['purchase', 'expense', 'investment', 'withdrawal'].forEach(function (kind) { k.appendChild(kpi(t('k_' + kind), money(d.totals[kind]))); });
+    body.appendChild(k);
+    if (!d.expenses.length) { body.appendChild(el('p', { className: 'muted', text: t('noExpenses') })); return; }
+    d.expenses.forEach(function (e) {
+      var voided = e.status !== 'active';
+      var card = el('div', { className: 'card', style: voided ? 'opacity:.6' : null }, [
+        el('div', { className: 'rc-head' }, [
+          el('span', { className: 'name', text: t('c_' + e.category) }),
+          el('span', { className: 'pill ' + (voided ? 'off' : e.kind === 'investment' ? 'qr' : e.kind === 'withdrawal' ? '' : 'draft'), text: voided ? t('voided') : t('k_' + e.kind) }),
+          el('span', { className: 'amt', text: money(e.amount), style: voided ? 'text-decoration:line-through' : null })
+        ]),
+        el('div', { className: 'meta', text: shortDate(e.date) + ' · ' + t('pf_' + e.paidFrom) + (e.supplier ? ' · ' + e.supplier : '') + (e.createdBy ? ' · ' + e.createdBy : '') }),
+        e.note ? el('div', { className: 'items-mini', text: e.note }) : null,
+        voided && e.voidReason ? el('div', { className: 'items-mini', text: '↩️ ' + e.voidReason }) : null
       ]);
-      if (it.go) card.appendChild(el('button', { className: 'btn btn-small', type: 'button', text: t('open') + ' →', onclick: it.go }));
+      if (!voided) {
+        var vb = el('button', { className: 'btn btn-small btn-ghost', type: 'button', text: '↩️ ' + t('voidQ') });
+        vb.addEventListener('click', function () {
+          promptBox(t('voidQ') + ' ' + money(e.amount), t('voidReason')).then(function (reason) {
+            if (reason) busy(vb, function () { return mutate('expenses.void', { expenseId: e.expenseId, reason: reason }).then(function () { toast(t('saved')); return loadOwner(); }); });
+          });
+        });
+        card.appendChild(vb);
+      }
       body.appendChild(card);
+    });
+  }
+
+  function chipGroup(values, labelOf, current, onPick) {
+    var box = el('div', { className: 'chips' });
+    values.forEach(function (v) {
+      var b = el('button', { className: 'btn' + (v === current ? ' sel' : ''), type: 'button', text: labelOf(v) });
+      b.addEventListener('click', function () {
+        Array.prototype.forEach.call(box.children, function (c) { c.classList.remove('sel'); });
+        b.classList.add('sel');
+        onPick(v);
+      });
+      box.appendChild(b);
+    });
+    return box;
+  }
+
+  function expenseForm() {
+    var st = { kind: 'purchase', category: 'coffee', paidFrom: 'cash_register' };
+    var catWrap = el('div', {});
+    var drawCats = function () {
+      catWrap.textContent = '';
+      catWrap.appendChild(chipGroup(KINDS[st.kind], function (c) { return t('c_' + c); }, st.category, function (c) { st.category = c; }));
+    };
+    var kinds = chipGroup(['purchase', 'expense', 'investment', 'withdrawal'], function (k) { return t('k_' + k); }, st.kind, function (k) {
+      st.kind = k; st.category = KINDS[k][0]; drawCats();
+    });
+    drawCats();
+    var amount = field(t('amount'), '', 'text');
+    amount.input.setAttribute('inputmode', 'numeric');
+    var preview = el('div', { className: 'note-sm' });
+    amount.input.addEventListener('input', function () {
+      var n = Number(amount.input.value.replace(/[^\d]/g, ''));
+      preview.textContent = n ? '= ' + money(n) : '';
+    });
+    var date = field(t('date'), todayVN(), 'date');
+    var paid = chipGroup(['cash_register', 'bank', 'owner_personal'], function (p) { return t('pf_' + p); }, st.paidFrom, function (p) { st.paidFrom = p; });
+    var supplier = field(t('supplier'), '');
+    var note = field(t('noteReq'), '');
+    var payloadKey = null;
+    var h = modal({
+      title: t('addExpense'),
+      body: [el('div', { className: 'k' }, [t('kind')]), kinds, catWrap, amount.node, preview, date.node, el('div', { className: 'k' }, [t('paidFrom')]), paid, supplier.node, note.node],
+      buttons: [
+        { label: t('save'), kind: 'btn-primary', onClick: function () {
+          var n = Number(amount.input.value.replace(/[^\d]/g, ''));
+          if (!n) { toast(errText('BAD_REQUEST') + ' — ' + t('amount')); return; }
+          if (st.category === 'other' && !note.input.value.trim()) { toast(t('noteReq')); return; }
+          var payload = { kind: st.kind, category: st.category, amount: n, date: date.input.value, paidFrom: st.paidFrom, supplier: supplier.input.value.trim(), note: note.input.value.trim() };
+          payloadKey = 'exp|' + JSON.stringify(payload);
+          return mutate('expenses.create', payload, payloadKey).then(function () {
+            h.close();
+            toast(t('saved') + ': ' + money(n));
+            owner.tab = 'exp';
+            return loadOwner();
+          }, function (e) { if (!isAuthErr(e)) toast(errText(e.code)); throw e; });
+        } },
+        { label: t('cancel'), kind: 'btn-ghost' }
+      ]
     });
   }
 
@@ -1013,7 +1370,8 @@
     $('productsBtn').addEventListener('click', function () { var b = this; busy(b, function () { return loadAdminProducts().then(function () { setView('products'); }); }); });
     $('addProductBtn').addEventListener('click', function () { editProduct(null); });
     $('helpBtn').addEventListener('click', function () { setView('help'); });
-    $('ownerBtn').addEventListener('click', function () { setView('owner'); });
+    $('segDash').addEventListener('click', function () { owner.tab = 'dash'; loadOwner(); });
+    $('segExp').addEventListener('click', function () { owner.tab = 'exp'; loadOwner(); });
     $('logoutAllBtn').addEventListener('click', function () {
       var b = this;
       confirmBox(t('confirmLogoutAll')).then(function (ok) {

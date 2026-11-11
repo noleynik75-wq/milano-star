@@ -89,7 +89,6 @@
         <h1 id="homeHello"></h1>
         <p class="role-chip" id="homeRole"></p>
         <button id="helpBtn" class="btn btn-primary" type="button" data-i18n="helpTitle"></button>
-        <button id="ownerBtn" class="btn" type="button" hidden data-i18n="ownerTitle"></button>
         <button id="productsBtn" class="btn" type="button" hidden data-i18n="productsTitle"></button>
         <button id="usersBtn" class="btn" type="button" hidden data-i18n="usersTitle"></button>
         <button id="pingBtn" class="btn" type="button" data-i18n="testAccess"></button>
@@ -114,10 +113,15 @@
         <div id="helpBody" class="list"></div>
       </div>
 
-      <div id="view-owner" class="view" hidden>
-        <button class="btn btn-ghost btn-small js-back-more" type="button" data-i18n="back"></button>
-        <h1 data-i18n="ownerTitle"></h1>
-        <div id="ownerBody" class="list"></div>
+      <div id="view-owner" class="view viz-root" hidden>
+        <div class="seg" role="tablist">
+          <button id="segDash" class="seg-btn active" type="button" data-i18n="dashboard"></button>
+          <button id="segExp" class="seg-btn" type="button" data-i18n="expensesTitle"></button>
+        </div>
+        <div id="periodBar" class="cat-bar" role="tablist"></div>
+        <p id="periodLine" class="muted small"></p>
+        <div id="dashBody" class="view"></div>
+        <div id="expBody" class="view" hidden></div>
       </div>
 
       <div id="view-products" class="view" hidden>
@@ -151,6 +155,7 @@
   <nav id="tabbar" class="tabbar" hidden>
     <button class="tab active" type="button" data-view="sell"><span>🛒</span><span data-i18n="tabSell"></span></button>
     <button class="tab" type="button" data-view="receipts"><span>🧾</span><span data-i18n="tabReceipts"></span></button>
+    <button id="ownerTab" class="tab" type="button" data-view="owner" hidden><span>📊</span><span data-i18n="tabOwner"></span></button>
     <button class="tab" type="button" data-view="more"><span>☰</span><span data-i18n="tabMore"></span></button>
   </nav>
 

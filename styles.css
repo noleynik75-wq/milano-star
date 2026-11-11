@@ -283,6 +283,41 @@ body.in-app main { padding-bottom: 260px; }
   background: transparent; color: var(--danger); font-size: 20px;
 }
 
+/* ---------- Дашборд (палитра проверена валидатором: синий / бирюзовый / оранжевый) ---------- */
+.viz-root {
+  --series-1: #2a78d6;   /* наличные, выручка */
+  --series-2: #1baf7a;   /* QR */
+  --series-3: #eb6834;   /* расходы */
+  --grid: #e7ded5;
+}
+@media (prefers-color-scheme: dark) {
+  .viz-root { --series-1: #3987e5; --series-2: #199e70; --series-3: #d95926; --grid: #3a2d25; }
+}
+.tab[hidden] { display: none; }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; min-width: 0; }
+.kpi .k { color: var(--muted); font-size: 14px; }
+.kpi .v { font-size: 21px; font-weight: 800; overflow-wrap: anywhere; }
+.kpi .s { color: var(--muted); font-size: 13px; }
+.kpi.hero { grid-column: 1 / -1; }
+.kpi.hero .v { font-size: 32px; }
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.chart-card h3 { margin: 0; font-size: 17px; }
+.chart-card svg { width: 100%; height: auto; display: block; touch-action: manipulation; }
+.chart-card .detail { min-height: 22px; font-size: 15px; color: var(--text); }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 14px; color: var(--muted); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.hbar { display: flex; flex-direction: column; gap: 3px; }
+.hbar .lbl { display: flex; justify-content: space-between; gap: 8px; font-size: 15px; }
+.hbar .lbl b { white-space: nowrap; }
+.hbar .track { height: 10px; border-radius: 0 4px 4px 0; background: transparent; }
+.hbar .fill { height: 10px; border-radius: 0 4px 4px 0; min-width: 2px; }
+.note-sm { font-size: 14px; color: var(--muted); }
+.exp-kind { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.exp-kind .btn, .chips .btn.sel { min-height: 48px; font-size: 16px; }
+.btn.sel { background: var(--brand); color: var(--brand-text); border-color: var(--brand); }
+.modal input[type=date].inp { padding: 0 8px; }
+
 /* Модальные окна */
 .modal-back {
   position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.45);
