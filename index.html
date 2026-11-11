@@ -10,12 +10,14 @@
   <meta name="apple-mobile-web-app-title" content="Milano Star">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css">
-  <script src="config.js"></script>
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <link rel="stylesheet" href="styles.css?v=202611111610">
+  <script src="config.js?v=202611111610"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js" defer></script>
+  <script src="app.js?v=202611111610" defer></script>
 </head>
 <body>
+  <button id="updateBar" class="update-bar" type="button" hidden></button>
   <header class="topbar">
     <div class="brand">Milano Star H2</div>
     <div class="who-top" id="whoTop"></div>
@@ -98,6 +100,8 @@
         <p id="pingResult" class="result" hidden></p>
         <button id="logoutAllBtn" class="btn btn-ghost" type="button" data-i18n="logoutAll"></button>
         <button class="btn btn-ghost js-logout" type="button" data-i18n="logout"></button>
+        <button id="appUpdateBtn" class="btn btn-ghost" type="button" data-i18n="appUpdate"></button>
+        <p class="muted small" id="appVersionLine"></p>
         <p class="muted small" id="versionLine"></p>
       </div>
 

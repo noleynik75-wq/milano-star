@@ -1,6 +1,7 @@
 (function () {
   'use strict';
 
+  var APP_VERSION = '202611111610'; // подставляется при публикации (tools/release-web.js)
   var CFG = window.MSH2_CONFIG || {};
   var LS = { session: 'msh2.session', lang: 'msh2.lang', products: 'msh2.products', cart: 'msh2.cart' };
 
@@ -522,7 +523,11 @@
     });
     var grid = $('productGrid');
     grid.textContent = '';
-    var list = state.products.filter(function (p) { return !state.category || p.category === state.category; });
+    // Самое ходовое за 30 дней — первым (при равенстве — порядок меню).
+    var list = state.products.filter(function (p) { return !state.category || p.category === state.category; })
+      .map(function (p, i) { return { p: p, i: i }; })
+      .sort(function (a, b) { return ((b.p.sold30 || 0) - (a.p.sold30 || 0)) || (a.i - b.i); })
+      .map(function (x) { return x.p; });
     $('noProducts').hidden = list.length > 0;
     var inCart = {};
     state.cart.forEach(function (l) { inCart[l.productId] = (inCart[l.productId] || 0) + l.qty; });
@@ -767,7 +772,7 @@
       c_ice: 'Đá', c_cups: 'Ly, ống hút, túi', c_other: 'Khác', c_rent: 'Thuê mặt bằng', c_electricity: 'Điện', c_water: 'Nước', c_internet: 'Internet',
       c_salary: 'Lương', c_repair: 'Sửa chữa', c_cleaning: 'Vệ sinh', c_equipment: 'Thiết bị', c_renovation: 'Sửa sang quán', c_furniture: 'Bàn ghế',
       c_deposit: 'Tiền cọc', c_owner: 'Chủ quán rút',
-      pf_cash_register: 'Tiền quầy', pf_bank: 'Ngân hàng', pf_owner_personal: 'Tiền riêng chủ quán'
+      pf_cash_register: 'Tiền quầy', pf_bank: 'Ngân hàng', pf_owner_personal: 'Tiền riêng', payerQ: 'Tiền của ai?', payerOther: 'Người khác…', fundingTitle: 'Tiền từ đâu', fundingAll: 'Từ đầu kinh doanh', fundingPeriod: 'Trong thời gian này', src_personal: 'Tiền riêng'
     },
     ru: {
       tabOwner: 'Владелец', dashboard: '📈 Дашборд', expensesTitle: '💸 Расходы',
@@ -789,7 +794,7 @@
       c_ice: 'Лёд', c_cups: 'Стаканы, трубочки, пакеты', c_other: 'Другое', c_rent: 'Аренда', c_electricity: 'Электричество', c_water: 'Вода', c_internet: 'Интернет',
       c_salary: 'Зарплата', c_repair: 'Ремонт', c_cleaning: 'Уборка', c_equipment: 'Оборудование', c_renovation: 'Ремонт помещения', c_furniture: 'Мебель',
       c_deposit: 'Депозит', c_owner: 'Изъятие владельцем',
-      pf_cash_register: 'Из кассы', pf_bank: 'Банк', pf_owner_personal: 'Личные деньги владельца'
+      pf_cash_register: 'Из кассы', pf_bank: 'Банк', pf_owner_personal: 'Личные деньги', payerQ: 'Чьи деньги?', payerOther: 'Другой человек…', fundingTitle: 'Откуда деньги', fundingAll: 'С начала бизнеса', fundingPeriod: 'За выбранный период', src_personal: 'Личные'
     }
   };
   Object.keys(OWN).forEach(function (l) { Object.keys(OWN[l]).forEach(function (k) { I18N[l][k] = OWN[l][k]; }); });
@@ -1320,6 +1325,7 @@
       }), C1));
     }
 
+    if (d.fundingAll && d.fundingAll.length) body.appendChild(fundingCard('💰 ' + t('fundingTitle') + ' · ' + t('fundingAll'), d.fundingAll));
     var L = d.lifetime;
     var pb = el('div', { className: 'chart-card' }, [el('h3', { text: '🎯 ' + t('payback') })]);
     [[t('lifeRevenue'), L.revenue], [t('lifeSpend'), L.purchase + L.expense], [t('lifeResult'), L.result], [t('investments'), L.investment], [t('withdrawals'), L.withdrawal]]
@@ -1335,6 +1341,16 @@
     body.appendChild(pb);
   }
 
+  /** «Откуда деньги»: касса, банк и личные деньги по людям (Уэн, Анастасия…). */
+  function fundingCard(title, rows) {
+    var total = (rows || []).reduce(function (s, r) { return s + r.total; }, 0);
+    return hbars(title, (rows || []).map(function (r) {
+      var who = r.payer && r.payer !== '?' ? r.payer : (state.lang === 'ru' ? 'не указано' : 'chưa ghi');
+      var label = r.source === 'personal' ? '👤 ' + t('src_personal') + ': ' + who : (r.source === 'cash_register' ? '💵 ' : '🏦 ') + t('pf_' + r.source);
+      return { label: label + ' · ' + (total ? Math.round(r.total / total * 100) : 0) + '%', value: r.total, text: money(r.total) };
+    }), 'var(--series-3)');
+  }
+
   function renderExpenses() {
     var d = owner.exp;
     var body = $('expBody');
@@ -1343,6 +1359,8 @@
     var k = el('div', { className: 'kpis' });
     ['purchase', 'expense', 'investment', 'withdrawal'].forEach(function (kind) { k.appendChild(kpi(t('k_' + kind), money(d.totals[kind]))); });
     body.appendChild(k);
+    body.appendChild(fundingCard(t('fundingTitle') + ' · ' + t('fundingPeriod'), d.funding));
+    body.appendChild(fundingCard(t('fundingTitle') + ' · ' + t('fundingAll'), d.fundingAll));
     if (!d.expenses.length) { body.appendChild(el('p', { className: 'muted', text: t('noExpenses') })); return; }
     d.expenses.forEach(function (e) {
       var voided = e.status !== 'active';
@@ -1352,7 +1370,7 @@
           el('span', { className: 'pill ' + (voided ? 'off' : e.kind === 'investment' ? 'qr' : e.kind === 'withdrawal' ? '' : 'draft'), text: voided ? t('voided') : t('k_' + e.kind) }),
           el('span', { className: 'amt', text: money(e.amount), style: voided ? 'text-decoration:line-through' : null })
         ]),
-        el('div', { className: 'meta', text: shortDate(e.date) + ' · ' + t('pf_' + e.paidFrom) + (e.supplier ? ' · ' + e.supplier : '') + (e.createdBy ? ' · ' + e.createdBy : '') }),
+        el('div', { className: 'meta', text: shortDate(e.date) + ' · ' + t('pf_' + e.paidFrom) + (e.payer ? ': ' + e.payer : '') + (e.supplier ? ' · ' + e.supplier : '') + (e.createdBy ? ' · ' + e.createdBy : '') }),
         e.note ? el('div', { className: 'items-mini', text: e.note }) : null,
         voided && e.voidReason ? el('div', { className: 'items-mini', text: '↩️ ' + e.voidReason }) : null
       ]);
@@ -1384,7 +1402,7 @@
   }
 
   function expenseForm() {
-    var st = { kind: 'purchase', category: 'coffee', paidFrom: 'cash_register' };
+    var st = { kind: 'purchase', category: 'coffee', paidFrom: 'cash_register', payer: '' };
     var catWrap = el('div', {});
     var drawCats = function () {
       catWrap.textContent = '';
@@ -1402,19 +1420,36 @@
       preview.textContent = n ? '= ' + money(n) : '';
     });
     var date = field(t('date'), todayVN(), 'date');
-    var paid = chipGroup(['cash_register', 'bank', 'owner_personal'], function (p) { return t('pf_' + p); }, st.paidFrom, function (p) { st.paidFrom = p; });
+    var payerWrap = el('div', {});
+    var payerOther = field(t('payerOther'), '');
+    var drawPayer = function () {
+      payerWrap.textContent = '';
+      if (st.paidFrom !== 'owner_personal') return;
+      var names = (owner.exp && owner.exp.payers && owner.exp.payers.length) ? owner.exp.payers : [];
+      if (!st.payer && names.length) st.payer = names[0];
+      payerWrap.appendChild(el('div', { className: 'k', text: t('payerQ') }));
+      payerWrap.appendChild(chipGroup(names.concat(['…']), function (n) { return n === '…' ? t('payerOther') : n; }, st.payer, function (n) { st.payer = n; payerOther.node.hidden = n !== '…'; }));
+      payerOther.node.hidden = st.payer !== '…' && names.length > 0;
+      if (!names.length) st.payer = '…';
+      payerWrap.appendChild(payerOther.node);
+    };
+    var paid = chipGroup(['cash_register', 'bank', 'owner_personal'], function (p) { return t('pf_' + p); }, st.paidFrom, function (p) { st.paidFrom = p; drawPayer(); });
     var supplier = field(t('supplier'), '');
     var note = field(t('noteReq'), '');
     var payloadKey = null;
     var h = modal({
       title: t('addExpense'),
-      body: [el('div', { className: 'k' }, [t('kind')]), kinds, catWrap, amount.node, preview, date.node, el('div', { className: 'k' }, [t('paidFrom')]), paid, supplier.node, note.node],
+      body: [el('div', { className: 'k' }, [t('kind')]), kinds, catWrap, amount.node, preview, date.node, el('div', { className: 'k' }, [t('paidFrom')]), paid, payerWrap, supplier.node, note.node],
       buttons: [
         { label: t('save'), kind: 'btn-primary', onClick: function () {
           var n = Number(amount.input.value.replace(/[^\d]/g, ''));
           if (!n) { toast(errText('BAD_REQUEST') + ' — ' + t('amount')); return; }
           if (st.category === 'other' && !note.input.value.trim()) { toast(t('noteReq')); return; }
           var payload = { kind: st.kind, category: st.category, amount: n, date: date.input.value, paidFrom: st.paidFrom, supplier: supplier.input.value.trim(), note: note.input.value.trim() };
+          if (st.paidFrom === 'owner_personal') {
+            payload.payer = st.payer === '…' ? payerOther.input.value.trim() : st.payer;
+            if (!payload.payer) { toast(t('payerQ')); return; }
+          }
           payloadKey = 'exp|' + JSON.stringify(payload);
           return mutate('expenses.create', payload, payloadKey).then(function () {
             h.close();
@@ -1547,6 +1582,7 @@
     if (!info) return;
     if (info.shift) {
       c.appendChild(el('div', { className: 'name', text: '🟢 ' + t('shiftOpenSince') + ' ' + timeOf(info.shift.openedAt) }));
+      c.appendChild(el('button', { className: 'btn btn-primary', type: 'button', text: t('cashTake'), onclick: cashTakeFlow }));
       c.appendChild(el('button', { className: 'btn', type: 'button', text: t('shiftEnd'), onclick: function (ev) { endShiftFlow(ev.currentTarget); } }));
     } else {
       c.appendChild(el('div', { className: 'name', text: '⚪ ' + t('shiftNone') }));
@@ -1712,6 +1748,85 @@
         { label: t('cancel'), kind: 'btn-ghost' }
       ]
     });
+  }
+
+  // ---------- «Взято из кассы» (для всех со сменой) ----------
+  var TK = {
+    vi: {
+      cashTake: '💸 Lấy tiền từ két', takeWhat: 'Lấy để làm gì?', takeBuy: '🛒 Mua đồ cho quán', takeOther: 'Việc khác',
+      takeWhatBought: 'Mua gì?', takeNote: 'Ghi chú (bắt buộc): mua gì, ở đâu, đưa cho ai…', takeDone: 'Đã ghi: lấy từ két',
+      appUpdate: '🔄 Cập nhật ứng dụng', appVersion: 'Phiên bản', updateReady: 'Có phiên bản mới — bấm để cập nhật'
+    },
+    ru: {
+      cashTake: '💸 Взято из кассы', takeWhat: 'На что взяли?', takeBuy: '🛒 Купили для кофейни', takeOther: 'Другое',
+      takeWhatBought: 'Что купили?', takeNote: 'Комментарий (обязательно): что купили, где, кому отдали…', takeDone: 'Записано: взято из кассы',
+      appUpdate: '🔄 Обновить приложение', appVersion: 'Версия', updateReady: 'Есть новая версия — нажмите, чтобы обновить'
+    }
+  };
+  Object.keys(TK).forEach(function (l) { Object.keys(TK[l]).forEach(function (k) { I18N[l][k] = TK[l][k]; }); });
+
+  var TAKE_CATS = ['milk', 'ice', 'fruit', 'sugar_syrup', 'cups', 'coffee', 'drinks', 'other'];
+
+  function cashTakeFlow() {
+    var st = { purpose: 'purchase', category: 'milk' };
+    var amount = field(t('amount'), '', 'text');
+    amount.input.setAttribute('inputmode', 'numeric');
+    var preview = el('div', { className: 'note-sm' });
+    amount.input.addEventListener('input', function () { var n = Number(amount.input.value.replace(/[^\d]/g, '')); preview.textContent = n ? '= ' + money(n) : ''; });
+    var catWrap = el('div', {}, [el('div', { className: 'k', text: t('takeWhatBought') }),
+      chipGroup(TAKE_CATS, function (c) { return t('c_' + c); }, st.category, function (c) { st.category = c; })]);
+    var purpose = chipGroup(['purchase', 'other'], function (p) { return p === 'purchase' ? t('takeBuy') : t('takeOther'); }, st.purpose,
+      function (p) { st.purpose = p; catWrap.hidden = p !== 'purchase'; });
+    var note = field(t('takeNote'), '');
+    var h = modal({
+      title: t('cashTake'),
+      body: [amount.node, preview, el('div', { className: 'k', text: t('takeWhat') }), purpose, catWrap, note.node],
+      buttons: [
+        { label: t('confirm'), kind: 'btn-primary', onClick: function () {
+          var n = Number(amount.input.value.replace(/[^\d]/g, ''));
+          var c = note.input.value.trim();
+          if (!n) { toast(t('amount')); return; }
+          if (!c) { toast(t('takeNote')); return; }
+          var payload = { amount: n, purpose: st.purpose, note: c };
+          if (st.purpose === 'purchase') payload.category = st.category;
+          return mutate('cash.take', payload).then(function () { h.close(); toast('✅ ' + t('takeDone') + ' ' + money(n)); },
+            function (e) { if (!isAuthErr(e)) toast(errText(e.code)); throw e; });
+        } },
+        { label: t('cancel'), kind: 'btn-ghost' }
+      ]
+    });
+  }
+
+  // ---------- Обновление приложения (ярлык на телефоне не перезагружается сам) ----------
+  /**
+   * Версия публикуется в version.json. Если на сервере новее — при открытии
+   * приложения оно перезагружается само (если не идёт продажа), иначе показывается
+   * полоса «Есть новая версия». Адрес меняется (?v=…), поэтому телефон не берёт
+   * старые файлы из кэша.
+   */
+  function reloadApp(v) {
+    location.replace(location.pathname + '?v=' + encodeURIComponent(v || String(Date.now())));
+  }
+
+  function isBusyForUpdate() {
+    return state.pendingSale || state.cart.length > 0 || document.querySelector('.modal-back');
+  }
+
+  function checkForUpdate() {
+    return fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (v) {
+      if (!v || !v.version || v.version === APP_VERSION) return;
+      // Защита от бесконечной перезагрузки: автоматически — не больше одного раза на версию.
+      var tried = null;
+      try { tried = sessionStorage.getItem('msh2.reloadedTo'); } catch (e) { /* ignore */ }
+      if (!isBusyForUpdate() && tried !== v.version) {
+        try { sessionStorage.setItem('msh2.reloadedTo', v.version); } catch (e) { /* ignore */ }
+        return reloadApp(v.version);
+      }
+      var bar = $('updateBar');
+      bar.textContent = '🔄 ' + t('updateReady');
+      bar.hidden = false;
+      bar.onclick = function () { reloadApp(v.version); };
+    }).catch(function () { /* нет связи — проверим позже */ });
   }
 
   // ---------- Чеки ----------
@@ -2045,4 +2160,9 @@
 
   wire();
   boot();
+  setTimeout(checkForUpdate, 1500);
+  setInterval(function () { if (!document.hidden) checkForUpdate(); }, 5 * 60000);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkForUpdate(); });
+  $('appUpdateBtn').addEventListener('click', function () { reloadApp(); });
+  $('appVersionLine').textContent = t('appVersion') + ': ' + APP_VERSION;
 })();
