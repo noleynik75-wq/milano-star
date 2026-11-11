@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Milano Star H2</title>
+  <meta name="theme-color" content="#5b3a29">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Milano Star">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Milano Star H2</div>
+    <div class="conn" id="conn" aria-live="polite"></div>
+    <button id="langBtn" class="lang" type="button"></button>
+  </header>
+
+  <main>
+    <section id="screen-loading" class="screen">
+      <p class="muted" data-i18n="loading"></p>
+      <button id="retryBootBtn" class="btn" type="button" hidden data-i18n="retry"></button>
+    </section>
+
+    <section id="screen-config" class="screen" hidden>
+      <h1 data-i18n="configTitle"></h1>
+      <p data-i18n="configText"></p>
+    </section>
+
+    <section id="screen-login" class="screen" hidden>
+      <h1 data-i18n="signInTitle"></h1>
+      <p class="muted" data-i18n="signInText"></p>
+      <div id="gsiButton" class="gsi"></div>
+      <p id="loginError" class="error" hidden></p>
+    </section>
+
+    <section id="screen-pending" class="screen" hidden>
+      <div class="badge badge-wait">⏳</div>
+      <h1 data-i18n="pendingTitle"></h1>
+      <p data-i18n="pendingText"></p>
+      <p class="who" id="pendingWho"></p>
+      <button id="checkAgainBtn" class="btn btn-primary" type="button" data-i18n="checkAgain"></button>
+      <button class="btn btn-ghost js-logout" type="button" data-i18n="logout"></button>
+    </section>
+
+    <section id="screen-blocked" class="screen" hidden>
+      <div class="badge badge-stop">⛔</div>
+      <h1 data-i18n="blockedTitle"></h1>
+      <p data-i18n="blockedText"></p>
+      <button class="btn btn-ghost js-logout" type="button" data-i18n="logout"></button>
+    </section>
+
+    <section id="screen-home" class="screen" hidden>
+      <h1 id="homeHello"></h1>
+      <p class="role-chip" id="homeRole"></p>
+      <p class="note" data-i18n="stage1Note"></p>
+      <button id="pingBtn" class="btn btn-primary" type="button" data-i18n="testAccess"></button>
+      <p id="pingResult" class="result" hidden></p>
+      <button id="usersBtn" class="btn" type="button" hidden data-i18n="usersTitle"></button>
+      <button id="logoutAllBtn" class="btn btn-ghost" type="button" data-i18n="logoutAll"></button>
+      <button class="btn btn-ghost js-logout" type="button" data-i18n="logout"></button>
+    </section>
+
+    <section id="screen-users" class="screen" hidden>
+      <button id="backBtn" class="btn btn-ghost btn-small" type="button" data-i18n="back"></button>
+      <h1 data-i18n="usersTitle"></h1>
+      <button id="reloadUsersBtn" class="btn btn-small" type="button" data-i18n="refresh"></button>
+      <div id="usersList" class="list"></div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
