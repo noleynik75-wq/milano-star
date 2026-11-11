@@ -18,6 +18,7 @@
 <body>
   <header class="topbar">
     <div class="brand">Milano Star H2</div>
+    <div class="who-top" id="whoTop"></div>
     <div class="conn" id="conn" aria-live="polite"></div>
     <button id="langBtn" class="lang" type="button"></button>
   </header>
@@ -46,7 +47,7 @@
     </section>
 
     <section id="screen-pending" class="screen" hidden>
-      <div class="badge badge-wait">⏳</div>
+      <div class="badge">⏳</div>
       <h1 data-i18n="pendingTitle"></h1>
       <p data-i18n="pendingText"></p>
       <p class="who" id="pendingWho"></p>
@@ -55,31 +56,107 @@
     </section>
 
     <section id="screen-blocked" class="screen" hidden>
-      <div class="badge badge-stop">⛔</div>
+      <div class="badge">⛔</div>
       <h1 data-i18n="blockedTitle"></h1>
       <p data-i18n="blockedText"></p>
       <button class="btn btn-ghost js-logout" type="button" data-i18n="logout"></button>
     </section>
 
-    <section id="screen-home" class="screen" hidden>
-      <h1 id="homeHello"></h1>
-      <p class="role-chip" id="homeRole"></p>
-      <p class="note" data-i18n="stage1Note"></p>
-      <button id="pingBtn" class="btn btn-primary" type="button" data-i18n="testAccess"></button>
-      <p id="pingResult" class="result" hidden></p>
-      <button id="usersBtn" class="btn" type="button" hidden data-i18n="usersTitle"></button>
-      <button id="logoutAllBtn" class="btn btn-ghost" type="button" data-i18n="logoutAll"></button>
-      <button class="btn btn-ghost js-logout" type="button" data-i18n="logout"></button>
-    </section>
+    <!-- Основное приложение (после одобрения) -->
+    <section id="screen-app" class="screen app" hidden>
 
-    <section id="screen-users" class="screen" hidden>
-      <button id="backBtn" class="btn btn-ghost btn-small" type="button" data-i18n="back"></button>
-      <h1 data-i18n="usersTitle"></h1>
-      <button id="reloadUsersBtn" class="btn btn-small" type="button" data-i18n="refresh"></button>
-      <div id="usersList" class="list"></div>
+      <div id="view-sell" class="view">
+        <div id="addModeBar" class="mode-bar" hidden>
+          <span id="addModeText"></span>
+          <button id="addModeCancel" class="btn btn-small btn-ghost" type="button" data-i18n="cancel"></button>
+        </div>
+        <div id="catBar" class="cat-bar" role="tablist"></div>
+        <div id="productGrid" class="grid"></div>
+        <p id="noProducts" class="muted" hidden data-i18n="noProducts"></p>
+      </div>
+
+      <div id="view-tables" class="view" hidden>
+        <div class="row-head">
+          <h1 data-i18n="tablesTitle"></h1>
+          <button id="reloadOrdersBtn" class="btn btn-small" type="button" data-i18n="refresh"></button>
+        </div>
+        <div id="ordersList" class="list"></div>
+        <div id="orderDetail" class="list" hidden></div>
+      </div>
+
+      <div id="view-receipts" class="view" hidden>
+        <div class="row-head">
+          <h1 data-i18n="receiptsTitle"></h1>
+          <button id="reloadSalesBtn" class="btn btn-small" type="button" data-i18n="refresh"></button>
+        </div>
+        <div class="seg" role="tablist">
+          <button id="dayToday" class="seg-btn active" type="button" data-i18n="today"></button>
+          <button id="dayYesterday" class="seg-btn" type="button" data-i18n="yesterday"></button>
+        </div>
+        <p id="salesScope" class="muted small"></p>
+        <div id="salesTotals" class="stats"></div>
+        <div id="salesList" class="list"></div>
+      </div>
+
+      <div id="view-more" class="view" hidden>
+        <h1 id="homeHello"></h1>
+        <p class="role-chip" id="homeRole"></p>
+        <button id="productsBtn" class="btn" type="button" hidden data-i18n="productsTitle"></button>
+        <button id="usersBtn" class="btn" type="button" hidden data-i18n="usersTitle"></button>
+        <button id="pingBtn" class="btn" type="button" data-i18n="testAccess"></button>
+        <p id="pingResult" class="result" hidden></p>
+        <button id="logoutAllBtn" class="btn btn-ghost" type="button" data-i18n="logoutAll"></button>
+        <button class="btn btn-ghost js-logout" type="button" data-i18n="logout"></button>
+        <p class="muted small" id="versionLine"></p>
+      </div>
+
+      <div id="view-users" class="view" hidden>
+        <button class="btn btn-ghost btn-small js-back-more" type="button" data-i18n="back"></button>
+        <div class="row-head">
+          <h1 data-i18n="usersTitle"></h1>
+          <button id="reloadUsersBtn" class="btn btn-small" type="button" data-i18n="refresh"></button>
+        </div>
+        <div id="usersList" class="list"></div>
+      </div>
+
+      <div id="view-products" class="view" hidden>
+        <button class="btn btn-ghost btn-small js-back-more" type="button" data-i18n="back"></button>
+        <div class="row-head">
+          <h1 data-i18n="productsTitle"></h1>
+          <button id="addProductBtn" class="btn btn-small btn-primary" type="button" data-i18n="addProduct"></button>
+        </div>
+        <p class="muted small" data-i18n="productsHint"></p>
+        <div id="productsAdminList" class="list"></div>
+      </div>
     </section>
   </main>
 
+  <!-- Корзина (видна на экране продажи) -->
+  <div id="cartPanel" class="cart" hidden>
+    <div id="cartLines" class="cart-lines" hidden></div>
+    <div class="cart-bar">
+      <button id="cartToggle" class="cart-summary" type="button">
+        <span id="cartCount"></span>
+        <strong id="cartTotal"></strong>
+      </button>
+      <button id="cartClear" class="btn btn-small btn-ghost" type="button" data-i18n="clear"></button>
+    </div>
+    <div id="cartActions" class="cart-actions">
+      <button id="payCashBtn" class="btn btn-primary" type="button" data-i18n="payCash"></button>
+      <button id="payQrBtn" class="btn btn-primary" type="button" data-i18n="payQr"></button>
+      <button id="toTableBtn" class="btn" type="button" data-i18n="toTable"></button>
+      <button id="addToOrderBtn" class="btn btn-primary wide" type="button" hidden></button>
+    </div>
+  </div>
+
+  <nav id="tabbar" class="tabbar" hidden>
+    <button class="tab active" type="button" data-view="sell"><span>🛒</span><span data-i18n="tabSell"></span></button>
+    <button class="tab" type="button" data-view="tables"><span>🪑</span><span data-i18n="tabTables"></span><b id="tablesBadge" class="badge-n" hidden></b></button>
+    <button class="tab" type="button" data-view="receipts"><span>🧾</span><span data-i18n="tabReceipts"></span></button>
+    <button class="tab" type="button" data-view="more"><span>☰</span><span data-i18n="tabMore"></span></button>
+  </nav>
+
+  <div id="modalRoot"></div>
   <div id="toast" class="toast" role="status" hidden></div>
 </body>
 </html>

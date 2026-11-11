@@ -2,155 +2,144 @@
   'use strict';
 
   var CFG = window.MSH2_CONFIG || {};
-  var LS_SESSION = 'msh2.session';
-  var LS_LANG = 'msh2.lang';
+  var LS = { session: 'msh2.session', lang: 'msh2.lang', products: 'msh2.products', cart: 'msh2.cart' };
 
   // ---------- Тексты ----------
   var I18N = {
     vi: {
-      loading: 'Đang tải…',
-      retry: 'Thử lại',
-      configTitle: 'Chưa cấu hình',
+      loading: 'Đang tải…', retry: 'Thử lại', configTitle: 'Chưa cấu hình',
       configText: 'Ứng dụng chưa được cài đặt xong. Vui lòng báo chủ quán.',
-      signInTitle: 'Đăng nhập',
-      signInText: 'Đăng nhập bằng tài khoản Google của bạn.',
-      pendingTitle: 'Đang chờ duyệt',
-      pendingText: 'Tài khoản của bạn đã được ghi nhận. Vui lòng chờ chủ quán phê duyệt.',
-      checkAgain: 'Kiểm tra lại',
-      blockedTitle: 'Tài khoản bị khóa',
-      blockedText: 'Bạn không còn quyền truy cập. Vui lòng liên hệ chủ quán.',
-      logout: 'Đăng xuất',
-      logoutAll: 'Đăng xuất trên mọi thiết bị',
-      hello: 'Xin chào',
-      stage1Note: 'Đây là bản thử đăng nhập. Chức năng bán hàng sẽ có ở giai đoạn sau.',
-      testAccess: 'Kiểm tra quyền truy cập',
-      accessOk: 'Máy chủ xác nhận: bạn có quyền truy cập.',
-      serverTime: 'Giờ máy chủ',
-      usersTitle: 'Người dùng',
-      back: '← Quay lại',
-      refresh: 'Làm mới',
-      approve: 'Duyệt',
-      changeRole: 'Đổi vai trò',
-      block: 'Khóa',
-      unblock: 'Mở khóa',
-      revokeSessions: 'Thoát mọi thiết bị',
-      reasonPrompt: 'Lý do khóa:',
-      confirmRevoke: 'Đăng xuất người này trên mọi thiết bị?',
-      confirmLogoutAll: 'Đăng xuất bạn trên mọi thiết bị?',
-      saved: 'Đã lưu',
-      you: '(bạn)',
-      noUsers: 'Chưa có người dùng.',
-      online: 'Đã kết nối',
-      offline: 'Mất kết nối',
-      role_owner: 'Chủ quán',
-      role_admin: 'Quản lý',
-      role_senior_cashier: 'Thu ngân chính',
-      role_staff: 'Nhân viên',
-      role_none: 'Chưa có vai trò',
-      status_pending: 'Chờ duyệt',
-      status_active: 'Đang hoạt động',
-      status_blocked: 'Đã khóa',
-      blockedReason: 'Lý do',
-      err_NETWORK: 'Không kết nối được máy chủ. Kết quả chưa rõ — bấm lại để kiểm tra.',
-      err_SESSION_INVALID: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
-      err_AUTH_INVALID_TOKEN: 'Đăng nhập Google không hợp lệ. Thử lại.',
-      err_AUTH_EMAIL_UNVERIFIED: 'Email Google chưa được xác minh.',
-      err_NOT_ALLOWED: 'Bạn không được phép làm việc này.',
-      err_FORBIDDEN: 'Bạn không được phép làm việc này.',
-      err_LAST_OWNER: 'Không thể khóa hoặc đổi vai trò chủ quán cuối cùng.',
-      err_BUSY: 'Máy chủ đang bận. Thử lại sau vài giây.',
-      err_NOT_CONFIGURED: 'Máy chủ chưa được cấu hình.',
-      err_generic: 'Có lỗi xảy ra. Thử lại.',
+      signInTitle: 'Đăng nhập', signInText: 'Đăng nhập bằng tài khoản Google của bạn.',
+      pendingTitle: 'Đang chờ duyệt', pendingText: 'Tài khoản của bạn đã được ghi nhận. Vui lòng chờ chủ quán phê duyệt.',
+      checkAgain: 'Kiểm tra lại', blockedTitle: 'Tài khoản bị khóa', blockedText: 'Bạn không còn quyền truy cập. Vui lòng liên hệ chủ quán.',
+      logout: 'Đăng xuất', logoutAll: 'Đăng xuất trên mọi thiết bị', hello: 'Xin chào',
+      testAccess: 'Kiểm tra kết nối', accessOk: 'Máy chủ xác nhận: bạn có quyền truy cập.', serverTime: 'Giờ máy chủ',
+      usersTitle: 'Người dùng', back: '← Quay lại', refresh: 'Làm mới', approve: 'Duyệt', changeRole: 'Đổi vai trò',
+      block: 'Khóa', unblock: 'Mở khóa', revokeSessions: 'Thoát mọi thiết bị', reasonPrompt: 'Lý do khóa',
+      confirmRevoke: 'Đăng xuất người này trên mọi thiết bị?', confirmLogoutAll: 'Đăng xuất bạn trên mọi thiết bị?',
+      saved: 'Đã lưu', you: '(bạn)', noUsers: 'Chưa có người dùng.', online: 'Đã kết nối', offline: 'Mất kết nối',
+      role_owner: 'Chủ quán', role_admin: 'Quản lý', role_senior_cashier: 'Thu ngân chính', role_staff: 'Nhân viên', role_none: 'Chưa có vai trò',
+      status_pending: 'Chờ duyệt', status_active: 'Đang hoạt động', status_blocked: 'Đã khóa', blockedReason: 'Lý do',
       inAppText: 'Bạn đang mở trang trong ứng dụng nhắn tin (Zalo, Messenger…). Đăng nhập Google không hoạt động ở đây. Hãy mở trang bằng Chrome hoặc Safari.',
-      openInChrome: 'Mở bằng Chrome',
-      copyLink: 'Sao chép liên kết',
-      linkCopied: 'Đã sao chép. Dán vào Chrome hoặc Safari.'
+      openInChrome: 'Mở bằng Chrome', copyLink: 'Sao chép liên kết', linkCopied: 'Đã sao chép. Dán vào Chrome hoặc Safari.',
+      tabSell: 'Bán hàng', tabTables: 'Bàn', tabReceipts: 'Hóa đơn', tabMore: 'Thêm',
+      all: 'Tất cả', noProducts: 'Chưa có sản phẩm.', items: 'món', clear: 'Xóa giỏ', cancel: 'Hủy', ok: 'OK',
+      payCash: 'Tiền mặt', payQr: 'QR', toTable: 'Ghi bàn', cash: 'Tiền mặt', qr: 'QR',
+      confirmPay: 'Xác nhận thanh toán', confirm: 'Xác nhận', saving: 'Đang lưu…',
+      saleSaved: 'Đã lưu hóa đơn', receiptNo: 'Hóa đơn #',
+      unknownTitle: 'Chưa rõ kết quả', unknownText: 'Mất kết nối khi đang lưu. Hóa đơn có thể đã được lưu. Bấm "Kiểm tra lại" — sẽ không bị lưu hai lần.',
+      checkResult: 'Kiểm tra lại', chooseVariant: 'Chọn loại', clearCart: 'Xóa toàn bộ giỏ hàng?',
+      tableLabel: 'Tên bàn (ví dụ: Bàn 3)', newTable: 'Ghi vào bàn', tablesTitle: 'Bàn đang mở', noOrders: 'Không có bàn nào đang mở.',
+      addItems: 'Thêm món', addToOrder: 'Thêm vào', addingFor: 'Thêm món cho', cancelOrder: 'Hủy bàn', cancelReason: 'Lý do hủy bàn',
+      removeItemQ: 'Bỏ món này khỏi bàn?', orderSaved: 'Đã ghi vào bàn', opened: 'Mở lúc', by: 'bởi',
+      receiptsTitle: 'Hóa đơn', today: 'Hôm nay', yesterday: 'Hôm qua', total: 'Tổng', count: 'Số hóa đơn',
+      scopeOwn: 'Chỉ hóa đơn của bạn', scopeAll: 'Tất cả nhân viên', noSales: 'Chưa có hóa đơn.', table: 'Bàn',
+      productsTitle: 'Sản phẩm & giá', addProduct: '+ Thêm', productsHint: 'Giá mới chỉ áp dụng cho hóa đơn mới. Hóa đơn cũ giữ giá cũ.',
+      draft: 'Nháp', off: 'Tắt', editProduct: 'Sửa sản phẩm', nameVi: 'Tên (tiếng Việt)', nameRu: 'Tên (tiếng Nga)',
+      category: 'Nhóm', price: 'Giá (VND)', unit: 'Đơn vị', variants: 'Loại (cách nhau bằng dấu phẩy)',
+      confirmed: 'Đã kiểm tra (tên và giá đúng)', active: 'Đang bán', note: 'Ghi chú', save: 'Lưu',
+      err_NETWORK: 'Không kết nối được máy chủ. Thử lại.',
+      err_SESSION_INVALID: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+      err_AUTH_INVALID_TOKEN: 'Đăng nhập Google không hợp lệ. Thử lại.', err_AUTH_EMAIL_UNVERIFIED: 'Email Google chưa được xác minh.',
+      err_NOT_ALLOWED: 'Bạn không được phép làm việc này.', err_FORBIDDEN: 'Bạn không được phép làm việc này.',
+      err_LAST_OWNER: 'Không thể khóa hoặc đổi vai trò chủ quán cuối cùng.', err_BUSY: 'Máy chủ đang bận. Thử lại sau vài giây.',
+      err_NOT_CONFIGURED: 'Máy chủ chưa được cấu hình.',
+      err_PRICE_CHANGED: 'Giá đã thay đổi. Giỏ hàng đã được cập nhật — kiểm tra lại tổng tiền.',
+      err_PRODUCT_UNAVAILABLE: 'Có món không còn bán. Danh sách đã được cập nhật.',
+      err_TABLE_BUSY: 'Bàn này đang mở. Hãy thêm món vào bàn đó.', err_ORDER_CHANGED: 'Bàn vừa được thay đổi trên máy khác. Kiểm tra lại tổng tiền.',
+      err_ORDER_CLOSED: 'Bàn này đã được thanh toán hoặc hủy.', err_ORDER_EMPTY: 'Bàn chưa có món.',
+      err_VERSION_CONFLICT: 'Sản phẩm vừa được sửa trên máy khác. Mở lại và sửa lần nữa.',
+      err_PRODUCT_NOT_READY: 'Chỉ bật bán khi đã kiểm tra và có giá.', err_BAD_REQUEST: 'Dữ liệu không hợp lệ.',
+      err_generic: 'Có lỗi xảy ra. Thử lại.'
     },
     ru: {
-      loading: 'Загрузка…',
-      retry: 'Повторить',
-      configTitle: 'Не настроено',
-      configText: 'В config.js не указаны API_URL и GOOGLE_CLIENT_ID.',
-      signInTitle: 'Вход',
-      signInText: 'Войдите через свой Google-аккаунт.',
-      pendingTitle: 'Ожидание одобрения',
-      pendingText: 'Ваш аккаунт зарегистрирован. Дождитесь одобрения владельца.',
-      checkAgain: 'Проверить снова',
-      blockedTitle: 'Доступ заблокирован',
-      blockedText: 'У вас больше нет доступа. Обратитесь к владельцу.',
-      logout: 'Выйти',
-      logoutAll: 'Выйти на всех устройствах',
-      hello: 'Здравствуйте',
-      stage1Note: 'Это тестовая версия входа. Касса появится на следующих этапах.',
-      testAccess: 'Проверить доступ',
-      accessOk: 'Сервер подтвердил доступ.',
-      serverTime: 'Время сервера',
-      usersTitle: 'Пользователи',
-      back: '← Назад',
-      refresh: 'Обновить',
-      approve: 'Одобрить',
-      changeRole: 'Сменить роль',
-      block: 'Заблокировать',
-      unblock: 'Разблокировать',
-      revokeSessions: 'Выйти на всех устройствах',
-      reasonPrompt: 'Причина блокировки:',
-      confirmRevoke: 'Завершить все сессии этого пользователя?',
-      confirmLogoutAll: 'Выйти на всех ваших устройствах?',
-      saved: 'Сохранено',
-      you: '(вы)',
-      noUsers: 'Пользователей пока нет.',
-      online: 'Связь есть',
-      offline: 'Нет связи',
-      role_owner: 'Владелец',
-      role_admin: 'Администратор',
-      role_senior_cashier: 'Старший кассир',
-      role_staff: 'Сотрудник',
-      role_none: 'Без роли',
-      status_pending: 'Ожидает',
-      status_active: 'Активен',
-      status_blocked: 'Заблокирован',
-      blockedReason: 'Причина',
-      err_NETWORK: 'Нет связи с сервером. Результат не известен — нажмите ещё раз, чтобы проверить.',
-      err_SESSION_INVALID: 'Сессия истекла. Войдите снова.',
-      err_AUTH_INVALID_TOKEN: 'Вход через Google не прошёл проверку. Попробуйте снова.',
-      err_AUTH_EMAIL_UNVERIFIED: 'Email Google-аккаунта не подтверждён.',
-      err_NOT_ALLOWED: 'Это действие вам не разрешено.',
-      err_FORBIDDEN: 'Это действие вам не разрешено.',
-      err_LAST_OWNER: 'Нельзя заблокировать или понизить последнего владельца.',
-      err_BUSY: 'Сервер занят. Повторите через несколько секунд.',
-      err_NOT_CONFIGURED: 'Сервер не настроен.',
-      err_generic: 'Произошла ошибка. Повторите.',
+      loading: 'Загрузка…', retry: 'Повторить', configTitle: 'Не настроено', configText: 'В config.js не указаны API_URL и GOOGLE_CLIENT_ID.',
+      signInTitle: 'Вход', signInText: 'Войдите через свой Google-аккаунт.',
+      pendingTitle: 'Ожидание одобрения', pendingText: 'Ваш аккаунт зарегистрирован. Дождитесь одобрения владельца.',
+      checkAgain: 'Проверить снова', blockedTitle: 'Доступ заблокирован', blockedText: 'У вас больше нет доступа. Обратитесь к владельцу.',
+      logout: 'Выйти', logoutAll: 'Выйти на всех устройствах', hello: 'Здравствуйте',
+      testAccess: 'Проверить связь', accessOk: 'Сервер подтвердил доступ.', serverTime: 'Время сервера',
+      usersTitle: 'Пользователи', back: '← Назад', refresh: 'Обновить', approve: 'Одобрить', changeRole: 'Сменить роль',
+      block: 'Заблокировать', unblock: 'Разблокировать', revokeSessions: 'Выйти на всех устройствах', reasonPrompt: 'Причина блокировки',
+      confirmRevoke: 'Завершить все сессии этого пользователя?', confirmLogoutAll: 'Выйти на всех ваших устройствах?',
+      saved: 'Сохранено', you: '(вы)', noUsers: 'Пользователей пока нет.', online: 'Связь есть', offline: 'Нет связи',
+      role_owner: 'Владелец', role_admin: 'Администратор', role_senior_cashier: 'Старший кассир', role_staff: 'Сотрудник', role_none: 'Без роли',
+      status_pending: 'Ожидает', status_active: 'Активен', status_blocked: 'Заблокирован', blockedReason: 'Причина',
       inAppText: 'Страница открыта внутри мессенджера (Zalo, Messenger, Telegram…). Вход через Google здесь не работает. Откройте страницу в Chrome или Safari.',
-      openInChrome: 'Открыть в Chrome',
-      copyLink: 'Скопировать ссылку',
-      linkCopied: 'Ссылка скопирована. Вставьте её в Chrome или Safari.'
+      openInChrome: 'Открыть в Chrome', copyLink: 'Скопировать ссылку', linkCopied: 'Ссылка скопирована. Вставьте её в Chrome или Safari.',
+      tabSell: 'Касса', tabTables: 'Столики', tabReceipts: 'Чеки', tabMore: 'Ещё',
+      all: 'Все', noProducts: 'Товаров нет.', items: 'поз.', clear: 'Очистить', cancel: 'Отмена', ok: 'OK',
+      payCash: 'Наличные', payQr: 'QR', toTable: 'На столик', cash: 'Наличные', qr: 'QR',
+      confirmPay: 'Подтвердите оплату', confirm: 'Подтвердить', saving: 'Сохранение…',
+      saleSaved: 'Чек сохранён', receiptNo: 'Чек №',
+      unknownTitle: 'Результат не известен', unknownText: 'Связь прервалась во время сохранения. Чек мог сохраниться. Нажмите «Проверить» — дубля не будет.',
+      checkResult: 'Проверить', chooseVariant: 'Выберите вариант', clearCart: 'Очистить корзину?',
+      tableLabel: 'Название столика (например: Стол 3)', newTable: 'Записать на столик', tablesTitle: 'Открытые столики', noOrders: 'Открытых столиков нет.',
+      addItems: 'Дозаказ', addToOrder: 'Добавить на', addingFor: 'Дозаказ для', cancelOrder: 'Отменить столик', cancelReason: 'Причина отмены',
+      removeItemQ: 'Убрать эту позицию со столика?', orderSaved: 'Записано на столик', opened: 'Открыт в', by: '—',
+      receiptsTitle: 'Чеки', today: 'Сегодня', yesterday: 'Вчера', total: 'Итого', count: 'Чеков',
+      scopeOwn: 'Только ваши чеки', scopeAll: 'Все сотрудники', noSales: 'Чеков пока нет.', table: 'Стол',
+      productsTitle: 'Товары и цены', addProduct: '+ Добавить', productsHint: 'Новая цена действует только для новых чеков. Старые чеки сохраняют прежнюю цену.',
+      draft: 'Черновик', off: 'Выкл.', editProduct: 'Товар', nameVi: 'Название (вьетнамское)', nameRu: 'Название (русское)',
+      category: 'Категория', price: 'Цена (VND)', unit: 'Единица', variants: 'Варианты (через запятую)',
+      confirmed: 'Проверено (название и цена верны)', active: 'В продаже', note: 'Примечание', save: 'Сохранить',
+      err_NETWORK: 'Нет связи с сервером. Повторите.',
+      err_SESSION_INVALID: 'Сессия истекла. Войдите снова.',
+      err_AUTH_INVALID_TOKEN: 'Вход через Google не прошёл проверку. Попробуйте снова.', err_AUTH_EMAIL_UNVERIFIED: 'Email Google-аккаунта не подтверждён.',
+      err_NOT_ALLOWED: 'Это действие вам не разрешено.', err_FORBIDDEN: 'Это действие вам не разрешено.',
+      err_LAST_OWNER: 'Нельзя заблокировать или понизить последнего владельца.', err_BUSY: 'Сервер занят. Повторите через несколько секунд.',
+      err_NOT_CONFIGURED: 'Сервер не настроен.',
+      err_PRICE_CHANGED: 'Цены изменились. Корзина обновлена — проверьте итог.',
+      err_PRODUCT_UNAVAILABLE: 'Какой-то товар снят с продажи. Список обновлён.',
+      err_TABLE_BUSY: 'Этот столик уже открыт. Добавьте позиции к нему.', err_ORDER_CHANGED: 'Столик только что изменили с другого телефона. Проверьте сумму.',
+      err_ORDER_CLOSED: 'Столик уже оплачен или отменён.', err_ORDER_EMPTY: 'На столике нет позиций.',
+      err_VERSION_CONFLICT: 'Товар только что изменили с другого телефона. Откройте и измените снова.',
+      err_PRODUCT_NOT_READY: 'Включить продажу можно только после проверки и с ценой.', err_BAD_REQUEST: 'Неверные данные.',
+      err_generic: 'Произошла ошибка. Повторите.'
     }
   };
 
   // ---------- Состояние ----------
   var state = {
-    lang: lsGet(LS_LANG) === 'ru' ? 'ru' : 'vi',
-    session: lsGet(LS_SESSION),
+    lang: lsGet(LS.lang) === 'ru' ? 'ru' : 'vi',
+    session: lsGet(LS.session),
     user: null,
     screen: 'loading',
+    view: 'sell',
     online: navigator.onLine,
-    usersData: null
+    products: readJson(LS.products) || [],
+    category: '',
+    cart: readJson(LS.cart) || [],
+    cartOpen: false,
+    addMode: null,           // { orderId, tableLabel } — дозаказ на столик
+    orders: [],
+    openOrderId: null,
+    salesDay: 'today',
+    salesData: null,
+    usersData: null,
+    adminProducts: null
   };
   var pendingRequestIds = {};
   var gsiReady = false;
   var pollTimer = null;
+  var ordersTimer = null;
 
   function $(id) { return document.getElementById(id); }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* приватный режим */ } }
   function lsDel(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } }
+  function readJson(k) { try { return JSON.parse(lsGet(k) || 'null'); } catch (e) { return null; } }
 
-  function t(key) {
-    var d = I18N[state.lang];
-    return (d && d[key]) || I18N.ru[key] || key;
-  }
+  function t(key) { var d = I18N[state.lang]; return (d && d[key]) || I18N.ru[key] || key; }
   function errText(code) { return I18N[state.lang]['err_' + code] ? t('err_' + code) : t('err_generic'); }
   function roleLabel(role) { return role ? t('role_' + role) : t('role_none'); }
+  function money(n) { return Number(n || 0).toLocaleString('vi-VN') + 'đ'; }
+  function timeOf(iso) {
+    var d = new Date(iso);
+    return isNaN(d) ? '' : d.toLocaleTimeString(state.lang === 'vi' ? 'vi-VN' : 'ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' });
+  }
+  function productName(p) { return state.lang === 'ru' && p.nameRu ? p.nameRu : p.nameVi; }
+  function isAdmin() { return !!(state.user && state.user.permissions && state.user.permissions.manageUsers); }
 
   function uuid() {
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -162,15 +151,18 @@
     return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
   }
 
+  /** Создать элемент. Текст пользователя вставляется только через textContent. */
   function el(tag, attrs, children) {
     var node = document.createElement(tag);
     if (attrs) Object.keys(attrs).forEach(function (k) {
-      if (k === 'text') node.textContent = attrs[k];
-      else if (k === 'className') node.className = attrs[k];
-      else if (k === 'onclick') node.addEventListener('click', attrs[k]);
-      else node.setAttribute(k, attrs[k]);
+      var v = attrs[k];
+      if (v === undefined || v === null || v === false) return;
+      if (k === 'text') node.textContent = v;
+      else if (k === 'className') node.className = v;
+      else if (k === 'onclick') node.addEventListener('click', v);
+      else node.setAttribute(k, v === true ? '' : v);
     });
-    (children || []).forEach(function (c) { if (c) node.appendChild(c); });
+    (children || []).forEach(function (c) { if (c) node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
     return node;
   }
 
@@ -183,16 +175,102 @@
     toastTimer = setTimeout(function () { box.hidden = true; }, 3500);
   }
 
+  // ---------- Модальные окна ----------
+  /**
+   * opts: { title, body: [nodes], buttons: [{label, kind, value, onClick}] , dismissable }
+   * Возвращает объект с close(). onClick может вернуть Promise; кнопка блокируется на время.
+   */
+  function modal(opts) {
+    var root = $('modalRoot');
+    var back = el('div', { className: 'modal-back' });
+    var box = el('div', { className: 'modal', role: 'dialog', 'aria-modal': 'true' });
+    if (opts.title) box.appendChild(el('h2', { text: opts.title }));
+    (opts.body || []).forEach(function (n) { if (n) box.appendChild(n); });
+    var btns = el('div', { className: 'btns' });
+    var handle = {
+      close: function () { if (back.parentNode) back.parentNode.removeChild(back); },
+      box: box
+    };
+    (opts.buttons || []).forEach(function (b) {
+      var btn = el('button', { className: 'btn ' + (b.kind || ''), type: 'button', text: b.label });
+      btn.addEventListener('click', function () {
+        if (btn.disabled) return;
+        if (!b.onClick) return handle.close();
+        var all = btns.querySelectorAll('button');
+        Array.prototype.forEach.call(all, function (x) { x.disabled = true; });
+        Promise.resolve().then(function () { return b.onClick(handle); }).catch(function () { /* показано внутри */ })
+          .then(function () { Array.prototype.forEach.call(all, function (x) { x.disabled = false; }); });
+      });
+      btns.appendChild(btn);
+    });
+    box.appendChild(btns);
+    back.appendChild(box);
+    if (opts.dismissable !== false) {
+      back.addEventListener('click', function (e) { if (e.target === back) handle.close(); });
+    }
+    root.appendChild(back);
+    var first = box.querySelector('input');
+    if (first) setTimeout(function () { first.focus(); }, 50);
+    return handle;
+  }
+
+  function confirmBox(text, okLabel, danger) {
+    return new Promise(function (resolve) {
+      var h = modal({
+        title: text,
+        buttons: [
+          { label: okLabel || t('confirm'), kind: danger ? 'btn-danger' : 'btn-primary', onClick: function () { h.close(); resolve(true); } },
+          { label: t('cancel'), kind: 'btn-ghost', onClick: function () { h.close(); resolve(false); } }
+        ]
+      });
+    });
+  }
+
+  function promptBox(title, label, initial) {
+    return new Promise(function (resolve) {
+      var inp = el('input', { className: 'inp', type: 'text', maxlength: '200' });
+      inp.value = initial || '';
+      var h = modal({
+        title: title,
+        body: [el('label', {}, [label || '', inp])],
+        buttons: [
+          { label: t('ok'), kind: 'btn-primary', onClick: function () { var v = inp.value.trim(); if (!v) return; h.close(); resolve(v); } },
+          { label: t('cancel'), kind: 'btn-ghost', onClick: function () { h.close(); resolve(null); } }
+        ]
+      });
+      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { var v = inp.value.trim(); if (v) { h.close(); resolve(v); } } });
+    });
+  }
+
   // ---------- Экраны ----------
   function show(name) {
     state.screen = name;
-    document.querySelectorAll('main > section').forEach(function (s) {
-      s.hidden = s.id !== 'screen-' + name;
-    });
+    document.querySelectorAll('main > section').forEach(function (s) { s.hidden = s.id !== 'screen-' + name; });
+    var inApp = name === 'app';
+    document.body.classList.toggle('in-app', inApp);
+    $('tabbar').hidden = !inApp;
     clearInterval(pollTimer);
     pollTimer = null;
     if (name === 'pending') pollTimer = setInterval(function () { refreshMe(true); }, 30000);
-    if (name === 'home' || name === 'users') pollTimer = setInterval(function () { refreshMe(true); }, 60000);
+    if (inApp) pollTimer = setInterval(function () { refreshMe(true); }, 60000);
+    renderCart();
+  }
+
+  function setView(name) {
+    state.view = name;
+    document.querySelectorAll('#screen-app .view').forEach(function (v) { v.hidden = v.id !== 'view-' + name; });
+    var tabName = name === 'users' || name === 'products' ? 'more' : name;
+    document.querySelectorAll('.tab').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-view') === tabName); });
+    clearInterval(ordersTimer);
+    ordersTimer = null;
+    if (name === 'tables') {
+      loadOrders().catch(function () {});
+      ordersTimer = setInterval(function () { if (!document.hidden) loadOrders().catch(function () {}); }, 20000);
+    }
+    if (name === 'receipts') loadSales().catch(function () {});
+    if (name === 'sell') renderSell();
+    renderCart();
+    window.scrollTo(0, 0);
   }
 
   function applyI18n() {
@@ -201,8 +279,15 @@
     $('langBtn').textContent = state.lang === 'vi' ? 'RU' : 'VI';
     renderConn();
     if (state.user) renderUserBits();
-    if (state.screen === 'users' && state.usersData) renderUsers();
     if (state.screen === 'login') renderGsiButton();
+    if (state.screen === 'app') {
+      renderSell();
+      renderCart();
+      if (state.view === 'tables') renderOrders();
+      if (state.view === 'receipts' && state.salesData) renderSales();
+      if (state.view === 'users' && state.usersData) renderUsers();
+      if (state.view === 'products' && state.adminProducts) renderAdminProducts();
+    }
   }
 
   function renderConn() {
@@ -216,7 +301,9 @@
     var u = state.user;
     $('homeHello').textContent = t('hello') + ', ' + (u.name || u.email);
     $('homeRole').textContent = roleLabel(u.role);
-    $('usersBtn').hidden = !(u.permissions && u.permissions.manageUsers);
+    $('whoTop').textContent = u.status === 'active' ? (u.name || '') : '';
+    $('usersBtn').hidden = !isAdmin();
+    $('productsBtn').hidden = !isAdmin();
     $('pendingWho').textContent = u.email;
   }
 
@@ -226,7 +313,12 @@
     renderUserBits();
     if (u.status === 'pending') return show('pending');
     if (u.status === 'active') {
-      if (state.screen !== 'users') show('home');
+      if (state.screen !== 'app') {
+        show('app');
+        setView(state.view || 'sell');
+        loadProducts().catch(function () {});
+        loadOrders().catch(function () {});
+      }
       return;
     }
     show('blocked');
@@ -245,10 +337,7 @@
       cache: 'no-store'
     }).then(function (r) { return r.json(); }, function () { return null; })
       .then(function (res) {
-        if (!res) {
-          setOnline(false);
-          throw makeErr('NETWORK');
-        }
+        if (!res) { setOnline(false); throw makeErr('NETWORK'); }
         setOnline(true);
         if (!res.ok) {
           var err = makeErr(res.error || 'INTERNAL');
@@ -265,11 +354,11 @@
   function makeErr(code) { var e = new Error(code); e.code = code; return e; }
 
   /**
-   * Изменяющий запрос. request_id сохраняется до получения ответа сервера,
-   * поэтому повторное нажатие после обрыва связи не создаёт дубль.
+   * Изменяющий запрос. request_id хранится до ответа сервера: повторное
+   * нажатие после обрыва связи отправляет тот же id — дубля не будет.
    */
-  function mutate(action, payload) {
-    var key = action + '|' + JSON.stringify(payload || {});
+  function mutate(action, payload, key) {
+    key = key || action + '|' + JSON.stringify(payload || {});
     if (!pendingRequestIds[key]) pendingRequestIds[key] = uuid();
     return api(action, payload, pendingRequestIds[key]).then(function (res) {
       delete pendingRequestIds[key];
@@ -281,41 +370,34 @@
   }
 
   function handleAuthError(code) {
-    if (code === 'SESSION_INVALID') {
-      clearSession();
-      showLogin();
-      toast(errText(code));
-    } else if (code === 'BLOCKED') {
-      clearSession();
-      show('blocked');
-    } else if (code === 'PENDING') {
-      if (state.user) state.user.status = 'pending';
-      show('pending');
-    }
+    if (code === 'SESSION_INVALID') { clearSession(); showLogin(); toast(errText(code)); }
+    else if (code === 'BLOCKED') { clearSession(); show('blocked'); }
+    else if (code === 'PENDING') { if (state.user) state.user.status = 'pending'; show('pending'); }
   }
+  function isAuthErr(e) { return ['SESSION_INVALID', 'BLOCKED', 'PENDING'].indexOf(e && e.code) >= 0; }
 
   function clearSession() {
     state.session = null;
     state.user = null;
     state.usersData = null;
-    lsDel(LS_SESSION);
+    state.salesData = null;
+    state.adminProducts = null;
+    state.addMode = null;
+    lsDel(LS.session);
   }
 
-  /** Выполнить действие кнопки с защитой от двойного нажатия. */
+  /** Действие кнопки с защитой от двойного нажатия. */
   function busy(button, fn) {
     if (button.disabled) return;
     button.disabled = true;
     Promise.resolve().then(fn).catch(function (e) {
-      if (!['SESSION_INVALID', 'BLOCKED', 'PENDING'].includes(e.code)) toast(errText(e.code));
+      if (!isAuthErr(e)) toast(errText(e && e.code));
     }).then(function () { button.disabled = false; });
   }
 
   function refreshMe(silent) {
     if (!state.session) return Promise.resolve();
-    return api('me').then(function (res) {
-      setUser(res.user);
-      route();
-    }, function (e) {
+    return api('me').then(function (res) { setUser(res.user); route(); }, function (e) {
       if (!silent && e.code === 'NETWORK') {
         show('loading');
         $('retryBootBtn').hidden = false;
@@ -328,29 +410,23 @@
     state.user = u;
     if (u.language && u.language !== state.lang && (u.language === 'vi' || u.language === 'ru')) {
       state.lang = u.language;
-      lsSet(LS_LANG, state.lang);
+      lsSet(LS.lang, state.lang);
       applyI18n();
     }
   }
 
   // ---------- Вход через Google ----------
-
-  /** Встроенный браузер мессенджера/соцсети: окно входа Google там не возвращает результат. */
   function isInAppBrowser() {
-    var ua = navigator.userAgent || '';
-    return /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Messenger|Zalo|Line\/|MicroMessenger|TikTok|musical_ly|Telegram|; wv\)/i.test(ua);
+    return /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Messenger|Zalo|Line\/|MicroMessenger|TikTok|musical_ly|Telegram|; wv\)/i.test(navigator.userAgent || '');
   }
   function isAndroid() { return /Android/i.test(navigator.userAgent || ''); }
 
   function renderInAppNote() {
     var inApp = isInAppBrowser();
     $('inAppNote').hidden = !inApp;
-    if (!inApp) return;
-    var btn = $('openBrowserBtn');
-    if (isAndroid()) {
-      var url = location.href.replace(/^https?:\/\//, '');
-      btn.href = 'intent://' + url + '#Intent;scheme=https;package=com.android.chrome;end';
-      btn.hidden = false;
+    if (inApp && isAndroid()) {
+      $('openBrowserBtn').href = 'intent://' + location.href.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+      $('openBrowserBtn').hidden = false;
     }
   }
 
@@ -370,72 +446,554 @@
     }
     if (!gsiReady) {
       google.accounts.id.initialize({
-        client_id: CFG.GOOGLE_CLIENT_ID,
-        callback: onGoogleCredential,
-        auto_select: false,
-        cancel_on_tap_outside: true,
-        ux_mode: 'popup'
+        client_id: CFG.GOOGLE_CLIENT_ID, callback: onGoogleCredential,
+        auto_select: false, cancel_on_tap_outside: true, ux_mode: 'popup'
       });
       gsiReady = true;
     }
-    // Кнопка Google вставляется асинхронно, поэтому рисуем её в новый
-    // контейнер и оставляем только последний — иначе возможны две кнопки.
     var box = $('gsiButton');
     var seq = ++gsiRenderSeq;
     var holder = document.createElement('div');
     box.textContent = '';
     box.appendChild(holder);
-    google.accounts.id.renderButton(holder, {
-      theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: state.lang, width: 300
-    });
+    google.accounts.id.renderButton(holder, { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: state.lang, width: 300 });
     if (seq !== gsiRenderSeq && holder.parentNode) holder.parentNode.removeChild(holder);
   }
 
   function onGoogleCredential(resp) {
     $('loginError').hidden = true;
     show('loading');
-    api('auth.login', {
-      idToken: resp.credential,
-      language: state.lang,
-      userAgent: navigator.userAgent.slice(0, 200)
-    }).then(function (res) {
-      state.session = res.session;
-      lsSet(LS_SESSION, res.session);
-      setUser(res.user);
-      route();
-    }, function (e) {
-      if (e.code === 'BLOCKED') return;
-      showLogin();
-      $('loginError').textContent = errText(e.code);
-      $('loginError').hidden = false;
-    });
+    api('auth.login', { idToken: resp.credential, language: state.lang, userAgent: navigator.userAgent.slice(0, 200) })
+      .then(function (res) {
+        state.session = res.session;
+        lsSet(LS.session, res.session);
+        setUser(res.user);
+        route();
+      }, function (e) {
+        if (e.code === 'BLOCKED') return;
+        showLogin();
+        $('loginError').textContent = errText(e.code);
+        $('loginError').hidden = false;
+      });
   }
 
   function logout() {
     var p = state.session ? api('auth.logout').catch(function () {}) : Promise.resolve();
-    p.then(function () {
+    return p.then(function () {
       clearSession();
       if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
       showLogin();
     });
   }
 
-  // ---------- Управление пользователями ----------
-  function loadUsers() {
-    return api('users.list').then(function (res) {
-      state.usersData = res;
-      renderUsers();
+  // ---------- Каталог и экран продажи ----------
+  function loadProducts() {
+    return api('products.list').then(function (res) {
+      state.products = res.products.filter(function (p) { return p.price > 0; });
+      if (!isAdmin()) lsSet(LS.products, JSON.stringify(state.products));
+      else lsSet(LS.products, JSON.stringify(state.products.filter(function (p) { return p.active && p.confirmed; })));
+      if (isAdmin()) state.products = state.products.filter(function (p) { return p.active && p.confirmed; });
+      repriceCart();
+      renderSell();
+      renderCart();
     });
+  }
+
+  function productById(id) {
+    for (var i = 0; i < state.products.length; i++) if (state.products[i].productId === id) return state.products[i];
+    return null;
+  }
+
+  function categories() {
+    var seen = {};
+    var out = [];
+    state.products.forEach(function (p) { if (!seen[p.category]) { seen[p.category] = true; out.push(p.category); } });
+    return out;
+  }
+
+  function renderSell() {
+    if (state.screen !== 'app') return;
+    var cats = categories();
+    if (state.category && cats.indexOf(state.category) < 0) state.category = '';
+    var bar = $('catBar');
+    bar.textContent = '';
+    [''].concat(cats).forEach(function (c) {
+      bar.appendChild(el('button', {
+        className: 'cat' + (c === state.category ? ' active' : ''), type: 'button', text: c || t('all'),
+        onclick: function () { state.category = c; renderSell(); }
+      }));
+    });
+    var grid = $('productGrid');
+    grid.textContent = '';
+    var list = state.products.filter(function (p) { return !state.category || p.category === state.category; });
+    $('noProducts').hidden = list.length > 0;
+    var inCart = {};
+    state.cart.forEach(function (l) { inCart[l.productId] = (inCart[l.productId] || 0) + l.qty; });
+    list.forEach(function (p) {
+      var tile = el('button', { className: 'tile', type: 'button' }, [
+        el('span', { text: productName(p) }),
+        el('span', { className: 'price', text: money(p.price) })
+      ]);
+      if (inCart[p.productId]) tile.appendChild(el('span', { className: 'qty-badge', text: String(inCart[p.productId]) }));
+      tile.addEventListener('click', function () { onProductTap(p); });
+      grid.appendChild(tile);
+    });
+    // Режим дозаказа
+    $('addModeBar').hidden = !state.addMode;
+    if (state.addMode) $('addModeText').textContent = t('addingFor') + ' ' + state.addMode.tableLabel;
+  }
+
+  function onProductTap(p) {
+    if (state.pendingSale) return;
+    if (p.variants && p.variants.length) {
+      var chips = el('div', { className: 'chips' });
+      var h = modal({ title: productName(p) + ' — ' + t('chooseVariant'), body: [chips], buttons: [{ label: t('cancel'), kind: 'btn-ghost' }] });
+      p.variants.forEach(function (v) {
+        chips.appendChild(el('button', { className: 'btn btn-primary', type: 'button', text: v, onclick: function () { h.close(); addToCart(p, v); } }));
+      });
+      return;
+    }
+    addToCart(p, '');
+  }
+
+  function saveCart() { lsSet(LS.cart, JSON.stringify(state.cart)); }
+
+  function addToCart(p, variant) {
+    var line = state.cart.find(function (l) { return l.productId === p.productId && l.variant === variant; });
+    if (line) line.qty = Math.min(99, line.qty + 1);
+    else state.cart.push({ productId: p.productId, variant: variant, qty: 1, name: p.nameVi, nameRu: p.nameRu, price: p.price });
+    saveCart();
+    renderSell();
+    renderCart();
+  }
+
+  /** Обновить цены в корзине по свежему каталогу; снятые товары убрать. */
+  function repriceCart() {
+    var before = JSON.stringify(state.cart);
+    state.cart = state.cart.filter(function (l) { return !!productById(l.productId); }).map(function (l) {
+      var p = productById(l.productId);
+      return { productId: l.productId, variant: l.variant, qty: l.qty, name: p.nameVi, nameRu: p.nameRu, price: p.price };
+    });
+    if (JSON.stringify(state.cart) !== before) saveCart();
+  }
+
+  function cartTotal() { return state.cart.reduce(function (s, l) { return s + l.price * l.qty; }, 0); }
+  function cartCount() { return state.cart.reduce(function (s, l) { return s + l.qty; }, 0); }
+  function cartItemsPayload() { return state.cart.map(function (l) { return { productId: l.productId, qty: l.qty, variant: l.variant }; }); }
+
+  function renderCart() {
+    var panel = $('cartPanel');
+    var visible = state.screen === 'app' && state.view === 'sell' && state.cart.length > 0;
+    panel.hidden = !visible;
+    if (!visible) return;
+    $('cartCount').textContent = cartCount() + ' ' + t('items') + (state.cartOpen ? ' ▾' : ' ▴');
+    $('cartTotal').textContent = money(cartTotal());
+    var lines = $('cartLines');
+    lines.hidden = !state.cartOpen;
+    lines.textContent = '';
+    if (state.cartOpen) {
+      state.cart.forEach(function (l, idx) {
+        var nm = el('div', { className: 'nm' }, [
+          (state.lang === 'ru' && l.nameRu ? l.nameRu : l.name) + (l.variant ? ' (' + l.variant + ')' : ''),
+          el('small', { text: money(l.price) + ' × ' + l.qty + ' = ' + money(l.price * l.qty) })
+        ]);
+        lines.appendChild(el('div', { className: 'cart-line' }, [
+          nm,
+          el('button', { className: 'qbtn', type: 'button', text: '−', 'aria-label': '-', onclick: function () { changeQty(idx, -1); } }),
+          el('span', { className: 'q', text: String(l.qty) }),
+          el('button', { className: 'qbtn', type: 'button', text: '+', 'aria-label': '+', onclick: function () { changeQty(idx, 1); } })
+        ]));
+      });
+    }
+    var add = !!state.addMode;
+    $('payCashBtn').hidden = add;
+    $('payQrBtn').hidden = add;
+    $('toTableBtn').hidden = add;
+    $('addToOrderBtn').hidden = !add;
+    if (add) $('addToOrderBtn').textContent = t('addToOrder') + ' ' + state.addMode.tableLabel;
+  }
+
+  function changeQty(idx, d) {
+    if (state.pendingSale) return;
+    var l = state.cart[idx];
+    if (!l) return;
+    l.qty += d;
+    if (l.qty <= 0) state.cart.splice(idx, 1);
+    if (l.qty > 99) l.qty = 99;
+    saveCart();
+    renderSell();
+    renderCart();
+  }
+
+  function clearCart() {
+    state.cart = [];
+    state.cartOpen = false;
+    saveCart();
+    renderSell();
+    renderCart();
+  }
+
+  /** После ошибки цены/наличия — обновить каталог и показать новую сумму. */
+  function handleCatalogError(e) {
+    if (e && (e.code === 'PRICE_CHANGED' || e.code === 'PRODUCT_UNAVAILABLE')) {
+      return loadProducts().catch(function () {}).then(function () { toast(errText(e.code)); throw e; });
+    }
+    throw e;
+  }
+
+  // ---------- Оплата ----------
+  function payFlow(method) {
+    if (!state.cart.length || state.pendingSale) return;
+    var total = cartTotal();
+    var payload = { items: cartItemsPayload(), paymentMethod: method, clientTotal: total };
+    var key = 'sale|' + JSON.stringify(payload);
+    var h = modal({
+      title: t('confirmPay'),
+      body: [
+        el('div', { className: 'big-amount', text: money(total) }),
+        el('p', { className: 'muted', text: (method === 'cash' ? '💵 ' : '📱 ') + t(method) + ' · ' + cartCount() + ' ' + t('items') })
+      ],
+      buttons: [
+        { label: t('confirm'), kind: 'btn-primary', onClick: function () { return submitSale(h, payload, key); } },
+        { label: t('cancel'), kind: 'btn-ghost' }
+      ]
+    });
+  }
+
+  function submitSale(h, payload, key) {
+    state.pendingSale = true;
+    return mutate('sales.create', payload, key).then(function (res) {
+      state.pendingSale = false;
+      h.close();
+      clearCart();
+      saleDone(res.sale);
+    }, function (e) {
+      if (e.code === 'NETWORK') {
+        // Результат неизвестен: корзина заблокирована, повтор — тем же request_id.
+        h.close();
+        unknownResult(function () { return submitSale(unknownResult.handle, payload, key); });
+        throw e;
+      }
+      state.pendingSale = false;
+      h.close();
+      if (!isAuthErr(e)) return handleCatalogError(e).catch(function (err) { if (err.code !== 'PRICE_CHANGED' && err.code !== 'PRODUCT_UNAVAILABLE') toast(errText(err.code)); });
+    });
+  }
+
+  function unknownResult(retry) {
+    unknownResult.handle = modal({
+      title: '⚠️ ' + t('unknownTitle'),
+      body: [el('p', { text: t('unknownText') })],
+      dismissable: false,
+      buttons: [{ label: t('checkResult'), kind: 'btn-primary', onClick: function () { return retry(); } }]
+    });
+  }
+
+  function saleDone(sale) {
+    var h = modal({
+      title: '✅ ' + t('saleSaved'),
+      body: [
+        el('div', { className: 'big-amount', text: money(sale.total) }),
+        el('p', { className: 'muted', text: t('receiptNo') + sale.no + ' · ' + t(sale.paymentMethod) + (sale.tableLabel ? ' · ' + sale.tableLabel : '') })
+      ],
+      buttons: [{ label: t('ok'), kind: 'btn-primary' }]
+    });
+    setTimeout(function () { h.close(); }, 4000);
+    if (state.salesData) state.salesData = null;
+  }
+
+  // ---------- Столики ----------
+  function toTableFlow() {
+    if (!state.cart.length) return;
+    promptBox(t('newTable'), t('tableLabel')).then(function (label) {
+      if (!label) return;
+      var payload = { tableLabel: label, items: cartItemsPayload() };
+      return mutate('orders.create', payload).then(function () {
+        clearCart();
+        toast(t('orderSaved') + ': ' + label);
+        loadOrders().catch(function () {});
+      }).catch(function (e) {
+        if (isAuthErr(e)) return;
+        if (e.code === 'TABLE_BUSY') {
+          var existing = state.orders.find(function (o) { return o.tableLabel.toLowerCase() === label.toLowerCase(); });
+          toast(errText(e.code));
+          if (existing) { state.addMode = { orderId: existing.orderId, tableLabel: existing.tableLabel }; renderSell(); renderCart(); }
+          else loadOrders().catch(function () {});
+          return;
+        }
+        handleCatalogError(e).catch(function (err) { if (err.code !== 'PRICE_CHANGED' && err.code !== 'PRODUCT_UNAVAILABLE') toast(errText(err.code)); });
+      });
+    });
+  }
+
+  function addToOrderFlow(btn) {
+    if (!state.addMode || !state.cart.length) return;
+    var mode = state.addMode;
+    busy(btn, function () {
+      return mutate('orders.addItems', { orderId: mode.orderId, items: cartItemsPayload() }).then(function () {
+        clearCart();
+        state.addMode = null;
+        toast(t('orderSaved') + ': ' + mode.tableLabel);
+        state.openOrderId = mode.orderId;
+        setView('tables');
+      }).catch(function (e) {
+        if (e.code === 'ORDER_CLOSED') { state.addMode = null; renderSell(); renderCart(); }
+        return handleCatalogError(e);
+      });
+    });
+  }
+
+  function loadOrders() {
+    return api('orders.list').then(function (res) {
+      state.orders = res.orders;
+      var badge = $('tablesBadge');
+      badge.hidden = res.orders.length === 0;
+      badge.textContent = String(res.orders.length);
+      if (state.openOrderId && !res.orders.some(function (o) { return o.orderId === state.openOrderId; })) state.openOrderId = null;
+      if (state.view === 'tables') renderOrders();
+    });
+  }
+
+  function renderOrders() {
+    var list = $('ordersList');
+    var detail = $('orderDetail');
+    list.textContent = '';
+    detail.textContent = '';
+    var open = state.openOrderId && state.orders.find(function (o) { return o.orderId === state.openOrderId; });
+    list.hidden = !!open;
+    detail.hidden = !open;
+    if (open) return renderOrderDetail(open);
+    if (!state.orders.length) { list.appendChild(el('p', { className: 'muted', text: t('noOrders') })); return; }
+    state.orders.forEach(function (o) {
+      var count = o.items.reduce(function (s, i) { return s + i.qty; }, 0);
+      var card = el('button', { className: 'card', type: 'button', style: 'text-align:left' }, [
+        el('div', { className: 'rc-head' }, [el('span', { className: 'name', text: '🪑 ' + o.tableLabel }), el('span', { className: 'amt', text: money(o.total) })]),
+        el('div', { className: 'meta', text: count + ' ' + t('items') + ' · ' + t('opened') + ' ' + timeOf(o.openedAt) + (o.openedBy ? ' · ' + o.openedBy : '') })
+      ]);
+      card.addEventListener('click', function () { state.openOrderId = o.orderId; renderOrders(); window.scrollTo(0, 0); });
+      list.appendChild(card);
+    });
+  }
+
+  function renderOrderDetail(o) {
+    var d = $('orderDetail');
+    d.appendChild(el('button', { className: 'btn btn-ghost btn-small', type: 'button', text: t('back'), onclick: function () { state.openOrderId = null; renderOrders(); } }));
+    d.appendChild(el('div', { className: 'rc-head' }, [el('h1', { text: '🪑 ' + o.tableLabel }), el('span', { className: 'amt', text: money(o.total) })]));
+    var card = el('div', { className: 'card' });
+    o.items.forEach(function (i) {
+      card.appendChild(el('div', { className: 'item-row' }, [
+        el('div', { className: 'nm' }, [i.name + (i.variant ? ' (' + i.variant + ')' : ''), el('div', { className: 'items-mini', text: money(i.price) + ' × ' + i.qty + ' = ' + money(i.total) })]),
+        el('button', {
+          className: 'x', type: 'button', text: '✕', 'aria-label': 'remove',
+          onclick: function (ev) {
+            var b = ev.currentTarget;
+            confirmBox(t('removeItemQ') + ' ' + i.name, t('confirm'), true).then(function (ok) {
+              if (!ok) return;
+              busy(b, function () { return mutate('orders.removeItem', { orderId: o.orderId, itemId: i.itemId }).then(function () { return loadOrders(); }); });
+            });
+          }
+        })
+      ]));
+    });
+    if (!o.items.length) card.appendChild(el('p', { className: 'muted', text: errText('ORDER_EMPTY') }));
+    d.appendChild(card);
+    var add = el('button', { className: 'btn', type: 'button', text: '➕ ' + t('addItems') });
+    add.addEventListener('click', function () {
+      state.addMode = { orderId: o.orderId, tableLabel: o.tableLabel };
+      clearCart();
+      setView('sell');
+    });
+    d.appendChild(add);
+    ['cash', 'qr'].forEach(function (m) {
+      d.appendChild(el('button', {
+        className: 'btn btn-primary', type: 'button', text: (m === 'cash' ? '💵 ' : '📱 ') + t(m) + ' · ' + money(o.total),
+        onclick: function () { payOrderFlow(o, m); }
+      }));
+    });
+    var cancel = el('button', { className: 'btn btn-danger', type: 'button', text: t('cancelOrder') });
+    cancel.addEventListener('click', function () {
+      promptBox(t('cancelOrder') + ': ' + o.tableLabel, t('cancelReason')).then(function (reason) {
+        if (!reason) return;
+        busy(cancel, function () {
+          return mutate('orders.cancel', { orderId: o.orderId, reason: reason }).then(function () {
+            state.openOrderId = null;
+            toast(t('saved'));
+            return loadOrders();
+          });
+        });
+      });
+    });
+    d.appendChild(cancel);
+  }
+
+  function payOrderFlow(o, method) {
+    if (!o.items.length) return toast(errText('ORDER_EMPTY'));
+    var payload = { orderId: o.orderId, paymentMethod: method, expectedTotal: o.total };
+    var key = 'orderpay|' + JSON.stringify(payload);
+    var h = modal({
+      title: t('confirmPay') + ' · ' + o.tableLabel,
+      body: [el('div', { className: 'big-amount', text: money(o.total) }), el('p', { className: 'muted', text: (method === 'cash' ? '💵 ' : '📱 ') + t(method) })],
+      buttons: [
+        { label: t('confirm'), kind: 'btn-primary', onClick: function () { return submitOrderPay(h, payload, key); } },
+        { label: t('cancel'), kind: 'btn-ghost' }
+      ]
+    });
+  }
+
+  function submitOrderPay(h, payload, key) {
+    return mutate('orders.pay', payload, key).then(function (res) {
+      h.close();
+      state.openOrderId = null;
+      saleDone(res.sale);
+      return loadOrders();
+    }, function (e) {
+      h.close();
+      if (e.code === 'NETWORK') {
+        unknownResult(function () { return submitOrderPay(unknownResult.handle, payload, key); });
+        throw e;
+      }
+      if (!isAuthErr(e)) toast(errText(e.code));
+      return loadOrders().catch(function () {});
+    });
+  }
+
+  // ---------- Чеки ----------
+  function salesDate() {
+    if (state.salesDay === 'today' || !state.salesData) return undefined;
+    var d = new Date(state.salesData.today + 'T12:00:00Z');
+    d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function loadSales() {
+    var date = state.salesDay === 'yesterday' ? salesDate() : undefined;
+    var p = state.salesDay === 'yesterday' && !state.salesData
+      ? api('sales.list').then(function (r) { state.salesData = r; return api('sales.list', { date: salesDate() }); })
+      : api('sales.list', date ? { date: date } : {});
+    return p.then(function (res) {
+      if (state.salesData && res.today !== state.salesData.today) state.salesData = null;
+      state.salesData = res;
+      renderSales();
+    });
+  }
+
+  function renderSales() {
+    var data = state.salesData;
+    $('dayToday').classList.toggle('active', state.salesDay === 'today');
+    $('dayYesterday').classList.toggle('active', state.salesDay === 'yesterday');
+    $('salesScope').textContent = data.date + ' · ' + (data.scope === 'all' ? t('scopeAll') : t('scopeOwn'));
+    var st = $('salesTotals');
+    st.textContent = '';
+    st.appendChild(el('div', { className: 'stat big' }, [el('div', { className: 'k', text: t('total') }), el('div', { className: 'v', text: money(data.totals.total) })]));
+    st.appendChild(el('div', { className: 'stat' }, [el('div', { className: 'k', text: '💵 ' + t('cash') }), el('div', { className: 'v', text: money(data.totals.cash) })]));
+    st.appendChild(el('div', { className: 'stat' }, [el('div', { className: 'k', text: '📱 ' + t('qr') }), el('div', { className: 'v', text: money(data.totals.qr) })]));
+    st.appendChild(el('div', { className: 'stat big' }, [el('div', { className: 'k', text: t('count') }), el('div', { className: 'v', text: String(data.totals.count) })]));
+    var list = $('salesList');
+    list.textContent = '';
+    if (!data.sales.length) { list.appendChild(el('p', { className: 'muted', text: t('noSales') })); return; }
+    data.sales.forEach(function (s) {
+      var meta = timeOf(s.createdAt) + (s.tableLabel ? ' · 🪑 ' + s.tableLabel : '') + (s.cashier ? ' · ' + s.cashier : '');
+      var items = s.items.map(function (i) { return i.name + (i.variant ? ' (' + i.variant + ')' : '') + ' ×' + i.qty; }).join(', ');
+      list.appendChild(el('div', { className: 'card' }, [
+        el('div', { className: 'rc-head' }, [
+          el('span', { className: 'name', text: '#' + s.no }),
+          el('span', { className: 'pill ' + s.paymentMethod, text: t(s.paymentMethod) }),
+          el('span', { className: 'amt', text: money(s.total) })
+        ]),
+        el('div', { className: 'meta', text: meta }),
+        el('div', { className: 'items-mini', text: items })
+      ]));
+    });
+  }
+
+  // ---------- Товары (владелец/муж) ----------
+  function loadAdminProducts() {
+    return api('products.list').then(function (res) { state.adminProducts = res.products; renderAdminProducts(); });
+  }
+
+  function renderAdminProducts() {
+    var list = $('productsAdminList');
+    list.textContent = '';
+    var lastCat = null;
+    state.adminProducts.forEach(function (p) {
+      if (p.category !== lastCat) { lastCat = p.category; list.appendChild(el('h2', { className: 'small', text: p.category, style: 'margin:8px 0 0' })); }
+      var pills = [];
+      if (!p.confirmed) pills.push(el('span', { className: 'pill draft', text: t('draft') }));
+      if (!p.active) pills.push(el('span', { className: 'pill off', text: t('off') }));
+      var card = el('button', { className: 'card', type: 'button', style: 'text-align:left' }, [
+        el('div', { className: 'rc-head' }, [
+          el('span', { className: 'name', text: p.nameVi + (p.variants.length ? ' (' + p.variants.join('/') + ')' : '') }),
+          el('span', { className: 'amt', text: p.price ? money(p.price) : '—' })
+        ]),
+        pills.length ? el('div', { className: 'row' }, pills) : null,
+        p.note ? el('div', { className: 'items-mini', text: p.note }) : null
+      ]);
+      card.addEventListener('click', function () { editProduct(p); });
+      list.appendChild(card);
+    });
+  }
+
+  function field(label, value, type) {
+    var inp = el('input', { className: 'inp', type: type || 'text', inputmode: type === 'number' ? 'numeric' : null });
+    inp.value = value === null || value === undefined ? '' : value;
+    return { node: el('label', {}, [label, inp]), input: inp };
+  }
+  function check(label, value) {
+    var inp = el('input', { type: 'checkbox' });
+    inp.checked = !!value;
+    return { node: el('label', { className: 'check' }, [inp, label]), input: inp };
+  }
+
+  function editProduct(p) {
+    var isNew = !p;
+    p = p || { category: state.adminProducts && state.adminProducts.length ? state.adminProducts[state.adminProducts.length - 1].category : '', nameVi: '', nameRu: '', unit: '', price: null, variants: [], confirmed: false, active: false, note: '' };
+    var f = {
+      nameVi: field(t('nameVi'), p.nameVi), nameRu: field(t('nameRu'), p.nameRu), category: field(t('category'), p.category),
+      price: field(t('price'), p.price, 'number'), unit: field(t('unit'), p.unit), variants: field(t('variants'), p.variants.join(', ')),
+      note: field(t('note'), p.note), confirmed: check(t('confirmed'), p.confirmed), active: check(t('active'), p.active)
+    };
+    var h = modal({
+      title: isNew ? t('addProduct') : t('editProduct'),
+      body: Object.keys(f).map(function (k) { return f[k].node; }),
+      buttons: [
+        {
+          label: t('save'), kind: 'btn-primary', onClick: function () {
+            var priceRaw = f.price.input.value.replace(/[^\d]/g, '');
+            var changes = {
+              nameVi: f.nameVi.input.value.trim(), nameRu: f.nameRu.input.value.trim(), category: f.category.input.value.trim(),
+              unit: f.unit.input.value.trim(), note: f.note.input.value.trim(),
+              price: priceRaw ? Number(priceRaw) : null,
+              variants: f.variants.input.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean),
+              confirmed: f.confirmed.input.checked, active: f.active.input.checked
+            };
+            var req = isNew ? mutate('products.create', changes) : mutate('products.update', { productId: p.productId, expectedVersion: p.version, changes: changes });
+            return req.then(function () {
+              h.close();
+              toast(t('saved'));
+              loadProducts().catch(function () {});
+              return loadAdminProducts();
+            }, function (e) {
+              if (!isAuthErr(e)) toast(errText(e.code));
+              if (e.code === 'VERSION_CONFLICT') { h.close(); loadAdminProducts().catch(function () {}); }
+              throw e;
+            });
+          }
+        },
+        { label: t('cancel'), kind: 'btn-ghost' }
+      ]
+    });
+  }
+
+  // ---------- Пользователи ----------
+  function loadUsers() {
+    return api('users.list').then(function (res) { state.usersData = res; renderUsers(); });
   }
 
   function renderUsers() {
     var list = $('usersList');
     list.textContent = '';
     var data = state.usersData;
-    if (!data.users.length) {
-      list.appendChild(el('p', { className: 'muted', text: t('noUsers') }));
-      return;
-    }
+    if (!data.users.length) { list.appendChild(el('p', { className: 'muted', text: t('noUsers') })); return; }
     data.users.forEach(function (u) { list.appendChild(userCard(u, data.assignableRoles)); });
   }
 
@@ -455,79 +1013,100 @@
       el('div', { className: 'meta', text: u.email }),
       el('div', { className: 'status status-' + u.status, text: t('status_' + u.status) + ' · ' + roleLabel(u.role) })
     ]);
-    if (u.status === 'blocked' && u.blockReason) {
-      card.appendChild(el('div', { className: 'meta', text: t('blockedReason') + ': ' + u.blockReason }));
-    }
+    if (u.status === 'blocked' && u.blockReason) card.appendChild(el('div', { className: 'meta', text: t('blockedReason') + ': ' + u.blockReason }));
     var acts = u.actions || [];
-
     if (acts.indexOf('approve') >= 0 || acts.indexOf('setRole') >= 0) {
       var sel = roleSelect(assignable, u.role);
       var isApprove = acts.indexOf('approve') >= 0;
       var btn = el('button', { className: 'btn btn-primary', type: 'button', text: isApprove ? t('approve') : t('changeRole') });
       btn.addEventListener('click', function () {
         busy(btn, function () {
-          return mutate(isApprove ? 'users.approve' : 'users.setRole', { userId: u.userId, role: sel.value })
-            .then(afterChange);
+          return mutate(isApprove ? 'users.approve' : 'users.setRole', { userId: u.userId, role: sel.value }).then(afterUserChange);
         });
       });
       card.appendChild(el('div', { className: 'row' }, [sel, btn]));
     }
-
     var row = el('div', { className: 'row' });
     if (acts.indexOf('revokeSessions') >= 0) {
       var rb = el('button', { className: 'btn', type: 'button', text: t('revokeSessions') });
       rb.addEventListener('click', function () {
-        if (!window.confirm(t('confirmRevoke'))) return;
-        busy(rb, function () { return mutate('users.revokeSessions', { userId: u.userId }).then(afterChange); });
+        confirmBox(t('confirmRevoke')).then(function (ok) {
+          if (ok) busy(rb, function () { return mutate('users.revokeSessions', { userId: u.userId }).then(afterUserChange); });
+        });
       });
       row.appendChild(rb);
     }
     if (acts.indexOf('block') >= 0) {
       var bb = el('button', { className: 'btn btn-danger', type: 'button', text: t('block') });
       bb.addEventListener('click', function () {
-        var reason = window.prompt(t('reasonPrompt'));
-        if (!reason || !reason.trim()) return;
-        busy(bb, function () { return mutate('users.block', { userId: u.userId, reason: reason.trim() }).then(afterChange); });
+        promptBox(t('block') + ': ' + (u.name || u.email), t('reasonPrompt')).then(function (reason) {
+          if (reason) busy(bb, function () { return mutate('users.block', { userId: u.userId, reason: reason }).then(afterUserChange); });
+        });
       });
       row.appendChild(bb);
     }
     if (acts.indexOf('unblock') >= 0) {
       var ub = el('button', { className: 'btn', type: 'button', text: t('unblock') });
-      ub.addEventListener('click', function () {
-        busy(ub, function () { return mutate('users.unblock', { userId: u.userId }).then(afterChange); });
-      });
+      ub.addEventListener('click', function () { busy(ub, function () { return mutate('users.unblock', { userId: u.userId }).then(afterUserChange); }); });
       row.appendChild(ub);
     }
     if (row.childNodes.length) card.appendChild(row);
     return card;
   }
 
-  function afterChange() {
-    toast(t('saved'));
-    return loadUsers();
-  }
+  function afterUserChange() { toast(t('saved')); return loadUsers(); }
 
   // ---------- Обработчики ----------
   function wire() {
     $('langBtn').addEventListener('click', function () {
       state.lang = state.lang === 'vi' ? 'ru' : 'vi';
-      lsSet(LS_LANG, state.lang);
+      lsSet(LS.lang, state.lang);
       applyI18n();
-      if (state.user && state.user.status !== 'blocked') {
-        mutate('me.setLanguage', { language: state.lang }).catch(function () {});
-      }
+      if (state.user && state.user.status !== 'blocked') mutate('me.setLanguage', { language: state.lang }).catch(function () {});
     });
-    document.querySelectorAll('.js-logout').forEach(function (b) {
-      b.addEventListener('click', function () { busy(b, logout); });
+    document.querySelectorAll('.js-logout').forEach(function (b) { b.addEventListener('click', function () { busy(b, logout); }); });
+    document.querySelectorAll('.js-back-more').forEach(function (b) { b.addEventListener('click', function () { setView('more'); }); });
+    document.querySelectorAll('.tab').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var v = b.getAttribute('data-view');
+        if (v === 'tables' && state.view === 'tables') state.openOrderId = null;
+        setView(v);
+      });
     });
-    $('checkAgainBtn').addEventListener('click', function () {
-      var b = this;
-      busy(b, function () { return refreshMe(false); });
+    $('checkAgainBtn').addEventListener('click', function () { var b = this; busy(b, function () { return refreshMe(false); }); });
+    $('retryBootBtn').addEventListener('click', function () { $('retryBootBtn').hidden = true; boot(); });
+    $('copyLinkBtn').addEventListener('click', function () {
+      var link = location.origin + location.pathname;
+      var done = function () { toast(t('linkCopied')); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done, function () { window.prompt(t('copyLink'), link); });
+      else window.prompt(t('copyLink'), link);
     });
-    $('retryBootBtn').addEventListener('click', function () {
-      $('retryBootBtn').hidden = true;
-      boot();
+
+    // Касса
+    $('cartToggle').addEventListener('click', function () { state.cartOpen = !state.cartOpen; renderCart(); });
+    $('cartClear').addEventListener('click', function () {
+      if (state.pendingSale) return;
+      confirmBox(t('clearCart'), t('clear'), true).then(function (ok) { if (ok) clearCart(); });
     });
+    $('payCashBtn').addEventListener('click', function () { payFlow('cash'); });
+    $('payQrBtn').addEventListener('click', function () { payFlow('qr'); });
+    $('toTableBtn').addEventListener('click', toTableFlow);
+    $('addToOrderBtn').addEventListener('click', function () { addToOrderFlow(this); });
+    $('addModeCancel').addEventListener('click', function () {
+      var orderId = state.addMode && state.addMode.orderId;
+      state.addMode = null;
+      clearCart();
+      state.openOrderId = orderId;
+      setView('tables');
+    });
+
+    // Столики и чеки
+    $('reloadOrdersBtn').addEventListener('click', function () { var b = this; busy(b, loadOrders); });
+    $('reloadSalesBtn').addEventListener('click', function () { var b = this; busy(b, loadSales); });
+    $('dayToday').addEventListener('click', function () { state.salesDay = 'today'; loadSales().catch(function (e) { toast(errText(e.code)); }); });
+    $('dayYesterday').addEventListener('click', function () { state.salesDay = 'yesterday'; loadSales().catch(function (e) { toast(errText(e.code)); }); });
+
+    // Ещё
     $('pingBtn').addEventListener('click', function () {
       var b = this;
       var out = $('pingResult');
@@ -536,61 +1115,36 @@
           out.className = 'result';
           out.textContent = t('accessOk') + ' ' + t('serverTime') + ': ' + new Date(res.serverTime).toLocaleString(state.lang === 'vi' ? 'vi-VN' : 'ru-RU');
           out.hidden = false;
-        }, function (e) {
-          out.className = 'result bad';
-          out.textContent = errText(e.code);
-          out.hidden = false;
-          throw e;
-        });
+          $('versionLine').textContent = 'v' + res.version;
+        }, function (e) { out.className = 'result bad'; out.textContent = errText(e.code); out.hidden = false; throw e; });
       });
     });
-    $('usersBtn').addEventListener('click', function () {
-      var b = this;
-      busy(b, function () { return loadUsers().then(function () { show('users'); }); });
-    });
-    $('reloadUsersBtn').addEventListener('click', function () {
-      var b = this;
-      busy(b, loadUsers);
-    });
-    $('backBtn').addEventListener('click', function () { show('home'); });
-    $('copyLinkBtn').addEventListener('click', function () {
-      var link = location.origin + location.pathname;
-      var done = function () { toast(t('linkCopied')); };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(link).then(done, function () { window.prompt(t('copyLink'), link); });
-      } else {
-        window.prompt(t('copyLink'), link);
-      }
-    });
+    $('usersBtn').addEventListener('click', function () { var b = this; busy(b, function () { return loadUsers().then(function () { setView('users'); }); }); });
+    $('reloadUsersBtn').addEventListener('click', function () { var b = this; busy(b, loadUsers); });
+    $('productsBtn').addEventListener('click', function () { var b = this; busy(b, function () { return loadAdminProducts().then(function () { setView('products'); }); }); });
+    $('addProductBtn').addEventListener('click', function () { editProduct(null); });
     $('logoutAllBtn').addEventListener('click', function () {
       var b = this;
-      if (!window.confirm(t('confirmLogoutAll'))) return;
-      busy(b, function () {
-        return mutate('auth.logoutAll', {}).then(function () {
-          clearSession();
-          showLogin();
-        });
+      confirmBox(t('confirmLogoutAll')).then(function (ok) {
+        if (ok) busy(b, function () { return mutate('auth.logoutAll', {}).then(function () { clearSession(); showLogin(); }); });
       });
     });
+
     window.addEventListener('online', function () { setOnline(true); });
     window.addEventListener('offline', function () { setOnline(false); });
     document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'visible' && state.session) refreshMe(true);
+      if (document.visibilityState === 'visible' && state.session) {
+        refreshMe(true);
+        if (state.screen === 'app') { loadProducts().catch(function () {}); loadOrders().catch(function () {}); }
+      }
     });
   }
 
   function boot() {
     applyI18n();
-    if (!CFG.API_URL || !CFG.GOOGLE_CLIENT_ID) {
-      show('config');
-      return;
-    }
-    if (state.session) {
-      show('loading');
-      refreshMe(false);
-    } else {
-      showLogin();
-    }
+    if (!CFG.API_URL || !CFG.GOOGLE_CLIENT_ID) { show('config'); return; }
+    if (state.session) { show('loading'); refreshMe(false); }
+    else showLogin();
   }
 
   wire();
