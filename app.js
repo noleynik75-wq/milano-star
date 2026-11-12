@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '202611120739'; // подставляется при публикации (tools/release-web.js)
+  var APP_VERSION = '202611121000'; // подставляется при публикации (tools/release-web.js)
   var CFG = window.MSH2_CONFIG || {};
   var LS = { session: 'msh2.session', lang: 'msh2.lang', products: 'msh2.products', cart: 'msh2.cart' };
 
@@ -577,7 +577,7 @@
     state.cart.forEach(function (l) { inCart[l.productId] = (inCart[l.productId] || 0) + l.qty; });
     list.forEach(function (p) {
       var tile = el('div', { className: 'tile', role: 'button', tabindex: '0' }, [
-        el('span', { className: 'ico', text: productIcon(p), 'aria-hidden': 'true' }),
+        productImage(p) ? el('img', { className: 'pimg', src: productImage(p), alt: '', loading: 'lazy' }) : el('span', { className: 'ico', text: productIcon(p), 'aria-hidden': 'true' }),
         el('span', { className: 'nm', text: productName(p) }),
         el('span', { className: 'price', text: money(p.price) })
       ]);
@@ -608,6 +608,17 @@
     [/yến/i, '🥫'], [/bí đao/i, '🍈'], [/bạc xỉu|sữa tươi/i, '🥛'], [/cà phê|phin/i, '☕']
   ];
   var CATEGORY_ICONS = [[/thuốc/i, '🚬'], [/giải khát/i, '🥤'], [/nước ép/i, '🧃'], [/cà phê|phin/i, '☕']];
+  /** Фото напитка (Open Food Facts, CC BY-SA 3.0 — см. img/p/CREDITS.md). Для остальных — значок. */
+  var PHOTOS = [
+    [/revive.*muối/i, 'revive-chanh-muoi'], [/revive/i, 'revive'], [/coca/i, 'coca'], [/pepsi/i, 'pepsi'],
+    [/sting(?!.*thái)/i, 'sting'], [/number one/i, 'numberone'], [/trà xanh/i, 'traxanh'], [/nutri/i, 'nutri'],
+    [/mirinda/i, 'mirinda-soda-kem'], [/bò húc/i, 'bo-huc-thai']
+  ];
+  function productImage(p) {
+    var name = p.nameVi || '';
+    for (var i = 0; i < PHOTOS.length; i++) if (PHOTOS[i][0].test(name)) return 'img/p/' + PHOTOS[i][1] + '.jpg';
+    return '';
+  }
   function productIcon(p) {
     var name = p.nameVi || '';
     for (var i = 0; i < ICONS.length; i++) if (ICONS[i][0].test(name)) return ICONS[i][1];
@@ -803,6 +814,7 @@
       ['7. Ошибочный чек', 'До конца своей смены: вкладка 🧾 Чеки → «Отменить чек» → причина. После «Закончить смену» или чужой чек — через владельца. Все отмены видны владельцу. Если деньги гостю уже вернули — владелец оформляет «Возврат».'],
       ['8. Начало и конец смены', 'В начале: 🛒 Касса → «▶ Начать смену». Первый за день пересчитывает деньги в кассе и вводит сумму. В конце: Ещё → «⏹ Закончить смену». Вечером ответственный (мама / владелец): Ещё → «💰 Касса дня и закрытие» → пересчитать деньги → «Закрыть день».'],
       ['8а. Оплата позже', 'Выберите товары → «⏳ Оплата позже» → для кого или столик (можно пусто). Когда гость платит: «Чеки» → «Не оплачены» → «Наличные» или «QR». На карточке товара есть кнопки − и +, чтобы убавить или добавить.'],
+      ['Фото напитков', 'Фото взяты из Open Food Facts (участники проекта), лицензия CC BY-SA 3.0. Список — в файле img/p/CREDITS.md на сайте.'],
       ['8в. Крупный шрифт', 'Кнопка «A+» вверху: всё крупнее. Нажмите ещё раз, чтобы вернуть обычный размер.'],
       ['8б. Без оплаты', 'Для своих (мама, дядя, сотрудники), угощение, проба/обучение: выберите товары как обычно → «🎁 Без оплаты» → причина и для кого. В выручку не идёт, но списывается со склада.'],
       ['9. Взято из кассы', 'Если взяли деньги из ящика — на покупку для кофейни (молоко, лёд…) или по другой причине: Ещё → «💸 Взято из кассы» → сумма, что купили, комментарий. Обязательно — иначе вечером касса не сойдётся.'],

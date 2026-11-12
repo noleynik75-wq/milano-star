@@ -393,3 +393,4 @@ html.big body { zoom: 1.25; }
 .cart-actions .btn-second { min-height: 46px; font-size: 16px; }
 html.big .who-top, html.big .conn { display: none; }
 html.big .brand { font-size: 17px; }
+.tile .pimg { height: 48px; width: 48px; object-fit: contain; border-radius: 8px; background: #fff; }
