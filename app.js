@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '202611121000'; // подставляется при публикации (tools/release-web.js)
+  var APP_VERSION = '202611121212'; // подставляется при публикации (tools/release-web.js)
   var CFG = window.MSH2_CONFIG || {};
   var LS = { session: 'msh2.session', lang: 'msh2.lang', products: 'msh2.products', cart: 'msh2.cart' };
 
@@ -612,7 +612,7 @@
   var PHOTOS = [
     [/revive.*muối/i, 'revive-chanh-muoi'], [/revive/i, 'revive'], [/coca/i, 'coca'], [/pepsi/i, 'pepsi'],
     [/sting(?!.*thái)/i, 'sting'], [/number one/i, 'numberone'], [/trà xanh/i, 'traxanh'], [/nutri/i, 'nutri'],
-    [/mirinda/i, 'mirinda-soda-kem'], [/bò húc/i, 'bo-huc-thai']
+    [/bò húc/i, 'bo-huc-thai'] // Mirinda у нас xá xị — фото «soda kem» не подходит
   ];
   function productImage(p) {
     var name = p.nameVi || '';
