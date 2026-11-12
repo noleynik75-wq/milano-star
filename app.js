@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '202611111711'; // подставляется при публикации (tools/release-web.js)
+  var APP_VERSION = '202611120739'; // подставляется при публикации (tools/release-web.js)
   var CFG = window.MSH2_CONFIG || {};
   var LS = { session: 'msh2.session', lang: 'msh2.lang', products: 'msh2.products', cart: 'msh2.cart' };
 
@@ -576,13 +576,23 @@
     var inCart = {};
     state.cart.forEach(function (l) { inCart[l.productId] = (inCart[l.productId] || 0) + l.qty; });
     list.forEach(function (p) {
-      var tile = el('button', { className: 'tile', type: 'button' }, [
+      var tile = el('div', { className: 'tile', role: 'button', tabindex: '0' }, [
         el('span', { className: 'ico', text: productIcon(p), 'aria-hidden': 'true' }),
         el('span', { className: 'nm', text: productName(p) }),
         el('span', { className: 'price', text: money(p.price) })
       ]);
-      if (inCart[p.productId]) tile.appendChild(el('span', { className: 'qty-badge', text: String(inCart[p.productId]) }));
+      if (inCart[p.productId]) {
+        tile.classList.add('in-cart');
+        tile.appendChild(el('span', { className: 'qty-badge', text: String(inCart[p.productId]) }));
+        var stop = function (fn) { return function (ev) { ev.stopPropagation(); fn(); }; };
+        tile.appendChild(el('div', { className: 'tile-qty' }, [
+          el('button', { className: 'qbtn', type: 'button', text: '−', 'aria-label': '−1 ' + productName(p), onclick: stop(function () { removeOneOf(p.productId); }) }),
+          el('span', { className: 'q', text: String(inCart[p.productId]) }),
+          el('button', { className: 'qbtn', type: 'button', text: '+', 'aria-label': '+1 ' + productName(p), onclick: stop(function () { onProductTap(p); }) })
+        ]));
+      }
       tile.addEventListener('click', function () { onProductTap(p); });
+      tile.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onProductTap(p); } });
       grid.appendChild(tile);
     });
   }
@@ -682,6 +692,11 @@
     renderCart();
   }
 
+  /** Убрать одну штуку товара прямо с карточки (последнюю добавленную строку этого товара). */
+  function removeOneOf(productId) {
+    for (var i = state.cart.length - 1; i >= 0; i--) if (state.cart[i].productId === productId) return changeQty(i, -1);
+  }
+
   function clearCart() {
     state.cart = [];
     state.cartOpen = false;
@@ -771,6 +786,8 @@
       ['6. Xem hóa đơn', 'Tab 🧾 Hóa đơn: tổng tiền hôm nay, tiền mặt và QR riêng, danh sách hóa đơn.'],
       ['7. Ghi sai hóa đơn', 'Trước khi kết thúc ca: tab 🧾 Hóa đơn → "Hủy hóa đơn" → ghi lý do. Sau khi kết thúc ca hoặc hóa đơn của người khác: báo chủ quán. Mọi lần hủy chủ quán đều thấy. Nếu đã trả tiền lại cho khách — chủ quán làm "Hoàn tiền".'],
       ['8. Bắt đầu và kết thúc ca', 'Đầu giờ: 🛒 Bán hàng → "▶ Bắt đầu ca". Người đầu tiên trong ngày đếm tiền trong két và nhập số tiền. Hết giờ: Thêm → "⏹ Kết thúc ca". Cuối ngày người phụ trách (mẹ / chủ quán): Thêm → "💰 Két tiền & đóng ngày" → đếm tiền → "Đóng sổ ngày".'],
+      ['8a. Trả tiền sau', 'Chọn món → "⏳ Trả tiền sau" → tên khách/bàn (có thể để trống). Khi khách trả: mục "Phiếu" → "Chưa thanh toán" → Tiền mặt hoặc QR. Trên thẻ món có nút − và + để bớt/thêm.'],
+      ['8c. Chữ to', 'Nút "A+" ở trên cùng: chữ to hơn. Bấm lại để trở về bình thường.'],
       ['8b. Không tính tiền', 'Người nhà, mời khách, thử/tập pha chế: chọn món như bình thường → "🎁 Không tính tiền" → lý do và cho ai. Không vào doanh thu, nhưng trừ kho.'],
       ['9. Lấy tiền từ két', 'Lấy tiền trong két để mua đồ cho quán (sữa, đá…) hoặc việc khác: Thêm → "💸 Lấy tiền từ két" → số tiền, mua gì, ghi chú. Bắt buộc ghi lại — nếu không cuối ngày tiền trong két sẽ không khớp.'],
       ['10. Mất điện thoại', 'Báo ngay cho chủ quán — chủ quán sẽ đăng xuất tài khoản của bạn trên mọi thiết bị.'],
@@ -785,6 +802,8 @@
       ['6. Чеки', 'Вкладка 🧾 Чеки: итог за сегодня, отдельно наличные и QR, список чеков.'],
       ['7. Ошибочный чек', 'До конца своей смены: вкладка 🧾 Чеки → «Отменить чек» → причина. После «Закончить смену» или чужой чек — через владельца. Все отмены видны владельцу. Если деньги гостю уже вернули — владелец оформляет «Возврат».'],
       ['8. Начало и конец смены', 'В начале: 🛒 Касса → «▶ Начать смену». Первый за день пересчитывает деньги в кассе и вводит сумму. В конце: Ещё → «⏹ Закончить смену». Вечером ответственный (мама / владелец): Ещё → «💰 Касса дня и закрытие» → пересчитать деньги → «Закрыть день».'],
+      ['8а. Оплата позже', 'Выберите товары → «⏳ Оплата позже» → для кого или столик (можно пусто). Когда гость платит: «Чеки» → «Не оплачены» → «Наличные» или «QR». На карточке товара есть кнопки − и +, чтобы убавить или добавить.'],
+      ['8в. Крупный шрифт', 'Кнопка «A+» вверху: всё крупнее. Нажмите ещё раз, чтобы вернуть обычный размер.'],
       ['8б. Без оплаты', 'Для своих (мама, дядя, сотрудники), угощение, проба/обучение: выберите товары как обычно → «🎁 Без оплаты» → причина и для кого. В выручку не идёт, но списывается со склада.'],
       ['9. Взято из кассы', 'Если взяли деньги из ящика — на покупку для кофейни (молоко, лёд…) или по другой причине: Ещё → «💸 Взято из кассы» → сумма, что купили, комментарий. Обязательно — иначе вечером касса не сойдётся.'],
       ['10. Потерян телефон', 'Сразу сообщите владельцу — он завершит ваш вход на всех устройствах.'],
@@ -2012,6 +2031,124 @@
     });
   }
 
+  // ---------- Крупный шрифт и «оплата позже» ----------
+  var LT = {
+    vi: {
+      bigOn: 'Chữ to', laterBtn: '⏳ Trả tiền sau', laterTitle: 'Trả tiền sau', laterWho: 'Cho ai / bàn (có thể để trống)',
+      laterNew: 'Phiếu mới', laterAddTo: 'Thêm vào phiếu đang mở:', laterSaved: 'Đã lưu phiếu chưa thanh toán',
+      openTitle: '⏳ Chưa thanh toán', openEmpty: '', laterCancel: 'Hủy phiếu', laterCancelWhy: 'Lý do hủy',
+      laterPaid: 'Đã thanh toán', laterAuto: 'Phiếu', laterHint: 'Món được ghi lại ngay. Thanh toán và đóng phiếu sau — trong mục "Phiếu".'
+    },
+    ru: {
+      bigOn: 'Крупный шрифт', laterBtn: '⏳ Оплата позже', laterTitle: 'Оплата позже', laterWho: 'Для кого / столик (можно пусто)',
+      laterNew: 'Новый чек', laterAddTo: 'Добавить в открытый чек:', laterSaved: 'Чек сохранён, ждёт оплаты',
+      openTitle: '⏳ Не оплачены', openEmpty: '', laterCancel: 'Отменить чек', laterCancelWhy: 'Причина отмены',
+      laterPaid: 'Оплачено', laterAuto: 'Чек', laterHint: 'Позиции записаны сразу. Оплату и закрытие чека подтвердите позже — во вкладке «Чеки».'
+    }
+  };
+  Object.keys(LT).forEach(function (l) { Object.keys(LT[l]).forEach(function (k) { I18N[l][k] = LT[l][k]; }); });
+
+  // Крупный шрифт (для слабовидящих): запоминается на этом телефоне.
+  var BIG_KEY = 'msh2.big';
+  function applyBig(on) {
+    document.documentElement.classList.toggle('big', on);
+    var b = $('bigBtn');
+    if (b) { b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.title = t('bigOn'); }
+  }
+  function toggleBig() {
+    var on = !document.documentElement.classList.contains('big');
+    try { localStorage.setItem(BIG_KEY, on ? '1' : '0'); } catch (e) { /* без памяти — только на сейчас */ }
+    applyBig(on);
+  }
+  try { applyBig(localStorage.getItem(BIG_KEY) === '1'); } catch (e) { applyBig(false); }
+
+  // «Оплата позже»: открытый чек (на сервере — Orders). Деньги появляются только при оплате.
+  state.openOrders = [];
+  function loadOrders() {
+    return api('orders.list').then(function (r) { state.openOrders = r.orders || []; renderOrders(); });
+  }
+
+  function laterFlow() {
+    if (!state.cart.length || state.pendingSale) return;
+    var items = cartItemsPayload();
+    var who = field(t('laterWho'), '');
+    var addBox = el('div', { className: 'list' });
+    function done() { clearCart(); toast('⏳ ' + t('laterSaved')); state.salesData = null; }
+    function fail(e) {
+      if (!isAuthErr(e)) toast(errText(e.code));
+      throw e;
+    }
+    var h = modal({
+      title: t('laterTitle'),
+      body: [el('p', { className: 'muted', text: money(cartTotal()) + ' · ' + cartCount() + ' ' + t('items') }), who.node, addBox, el('p', { className: 'note-sm', text: t('laterHint') })],
+      buttons: [
+        { label: t('laterNew'), kind: 'btn-primary', onClick: function () {
+          var label = who.input.value.trim() || (t('laterAuto') + ' ' + new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }));
+          return mutate('orders.create', { tableLabel: label, items: items }, 'later|' + label + '|' + JSON.stringify(items))
+            .then(function () { h.close(); done(); }, fail);
+        } },
+        { label: t('cancel'), kind: 'btn-ghost' }
+      ]
+    });
+    // Уже открытые чеки — можно дописать позиции туда.
+    api('orders.list').then(function (r) {
+      state.openOrders = r.orders || [];
+      if (!state.openOrders.length) return;
+      addBox.appendChild(el('div', { className: 'k', text: t('laterAddTo') }));
+      state.openOrders.forEach(function (o) {
+        addBox.appendChild(el('button', { className: 'btn', type: 'button', text: '➕ ' + o.tableLabel + ' · ' + money(o.total), onclick: function (ev) {
+          busy(ev.currentTarget, function () {
+            return mutate('orders.addItems', { orderId: o.orderId, items: items }, 'lateradd|' + o.orderId + '|' + JSON.stringify(items))
+              .then(function () { h.close(); done(); }, fail);
+          });
+        } }));
+      });
+    }).catch(function () {});
+  }
+
+  function renderOrders() {
+    var box = $('openOrders');
+    if (!box) return;
+    box.textContent = '';
+    var list = state.openOrders || [];
+    if (!list.length) { box.hidden = true; return; }
+    box.hidden = false;
+    box.appendChild(el('h2', { text: t('openTitle') + ' · ' + list.length, style: 'margin:4px 0' }));
+    list.forEach(function (o) {
+      var card = el('div', { className: 'card' }, [
+        el('div', { className: 'row-head' }, [el('div', { className: 'name', text: o.tableLabel }), el('b', { text: money(o.total) })]),
+        el('div', { className: 'meta', text: timeOf(o.openedAt) + (o.openedBy ? ' · ' + o.openedBy : '') }),
+        el('div', { className: 'items-mini', text: o.items.map(function (i) { return i.name + (i.variant ? ' (' + i.variant + ')' : '') + ' ×' + i.qty; }).join(', ') })
+      ]);
+      function pay(method) {
+        return function (ev) {
+          busy(ev.currentTarget, function () {
+            return mutate('orders.pay', { orderId: o.orderId, paymentMethod: method, expectedTotal: o.total }, 'orderpay|' + o.orderId)
+              .then(function () { toast('✅ ' + t('laterPaid') + ': ' + o.tableLabel); state.salesData = null; return loadSales(); },
+                function (e) { if (!isAuthErr(e)) toast(errText(e.code)); return loadOrders().catch(function () {}); });
+          });
+        };
+      }
+      card.appendChild(el('div', { className: 'row' }, [
+        el('button', { className: 'btn btn-primary', type: 'button', text: t('payCash'), onclick: pay('cash') }),
+        el('button', { className: 'btn btn-primary', type: 'button', text: t('payQr'), onclick: pay('qr') })
+      ]));
+      card.appendChild(el('button', { className: 'btn btn-ghost btn-small', type: 'button', text: t('laterCancel'), onclick: function () {
+        var why = field(t('laterCancelWhy'), '');
+        var h = modal({ title: t('laterCancel') + ': ' + o.tableLabel, body: [why.node], buttons: [
+          { label: t('confirm'), kind: 'btn-danger', onClick: function () {
+            var r = why.input.value.trim();
+            if (!r) { toast(t('laterCancelWhy')); return; }
+            return mutate('orders.cancel', { orderId: o.orderId, reason: r }, 'ordercancel|' + o.orderId).then(function () { h.close(); return loadOrders(); },
+              function (e) { if (!isAuthErr(e)) toast(errText(e.code)); throw e; });
+          } },
+          { label: t('cancel'), kind: 'btn-ghost' }
+        ] });
+      } }));
+      box.appendChild(card);
+    });
+  }
+
   // ---------- Чеки ----------
   function salesDate() {
     if (state.salesDay === 'today' || !state.salesData) return undefined;
@@ -2029,6 +2166,7 @@
       if (state.salesData && res.today !== state.salesData.today) state.salesData = null;
       state.salesData = res;
       renderSales();
+      return loadOrders().catch(function () {});
     });
   }
 
@@ -2303,6 +2441,8 @@
     $('payCashBtn').addEventListener('click', function () { payFlow('cash'); });
     $('payQrBtn').addEventListener('click', function () { payFlow('qr'); });
     $('freeBtn').addEventListener('click', freeFlow);
+    $('laterBtn').addEventListener('click', laterFlow);
+    $('bigBtn').addEventListener('click', toggleBig);
 
     // Чеки
     $('reloadSalesBtn').addEventListener('click', function () { var b = this; busy(b, loadSales); });
